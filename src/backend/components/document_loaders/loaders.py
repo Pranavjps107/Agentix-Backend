@@ -5,7 +5,7 @@ from langchain_community.document_loaders import (
     TextLoader, PyPDFLoader, CSVLoader, JSONLoader,
     WebBaseLoader, YoutubeLoader, GitHubIssuesLoader
 )
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 from typing import Dict, Type,List , Any
 import asyncio
 

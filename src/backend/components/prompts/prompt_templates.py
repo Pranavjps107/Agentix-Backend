@@ -1,6 +1,6 @@
 # src/backend/components/prompts/prompt_templates.py
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 from typing import Dict, Type,List , Any
 
 @register_component

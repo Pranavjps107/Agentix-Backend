@@ -3,7 +3,7 @@ Base Chat Model Component
 """
 from typing import Dict, Any, List, Optional
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 
 @register_component
 class ChatModelComponent(BaseLangChainComponent):

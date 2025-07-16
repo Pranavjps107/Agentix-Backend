@@ -2,7 +2,7 @@
 Base Embeddings Component
 """
 from typing import Dict, Any, List, Optional
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 
 @register_component
 class EmbeddingsComponent(BaseLangChainComponent):

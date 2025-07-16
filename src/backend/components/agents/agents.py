@@ -1,11 +1,22 @@
 # src/backend/components/agents/agents.py
+"""
+Agent Components
+"""
+"""
+Agent Components
+"""
 from langchain.agents import AgentExecutor, create_openai_functions_agent, create_react_agent
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain.agents.format_scratchpad import format_to_openai_function_messages
 from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
-from typing import Dict, Type,List , Any
 
+# Fix imports
+from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from typing import Dict, Type, List, Any
+
+# Rest of your code stays the same...
+
+# Rest of your code stays the same...
 @register_component
 class OpenAIFunctionsAgentComponent(BaseLangChainComponent):
     """OpenAI Functions Agent Component"""

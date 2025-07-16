@@ -2,7 +2,7 @@
 from langchain_core.tools import BaseTool, StructuredTool
 from langchain_core.tools.simple import Tool
 from pydantic import BaseModel, Field
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 from typing import Dict, Type,List , Any
 import asyncio  # Add this line
 

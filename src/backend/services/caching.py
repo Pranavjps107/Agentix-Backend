@@ -2,6 +2,10 @@
 Caching Service using Redis
 """
 import json
+"""
+Caching Service using Redis
+"""
+import json
 import hashlib
 import logging
 from typing import Any, Optional, Dict
@@ -10,6 +14,7 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
+# Rest of your caching.py code stays the same...
 class CacheManager:
     """Redis-based caching for component results and flow data"""
     

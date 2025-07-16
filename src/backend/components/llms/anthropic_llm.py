@@ -3,7 +3,7 @@ Anthropic Claude LLM Component for LangChain Integration
 """
 from typing import Dict, Any, Optional, List
 import logging
-from ...core.base import (
+from core.base import (
     BaseLangChainComponent, 
     ComponentInput, 
     ComponentOutput, 

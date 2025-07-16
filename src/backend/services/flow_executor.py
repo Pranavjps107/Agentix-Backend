@@ -1,20 +1,25 @@
 """
 Flow Execution Service
 """
+"""
+Flow Execution Service
+"""
 import asyncio
 import time
 import logging
 from typing import Dict, Any, List, Optional, Set
 from uuid import uuid4
 
-from ..models.flow import FlowDefinition, FlowNode, FlowEdge, FlowStatus
-from ..models.execution import ExecutionResult, ExecutionStatus, TaskInfo, ExecutionStep
-from ..core.registry import ComponentRegistry
-from ..core.exceptions import FlowException, FlowValidationException, FlowExecutionException
-from .component_manager import ComponentManager
+# Fix imports
+from models.flow import FlowDefinition, FlowNode, FlowEdge, FlowStatus
+from models.execution import ExecutionResult, ExecutionStatus, TaskInfo, ExecutionStep
+from core.registry import ComponentRegistry
+from core.exceptions import FlowException, FlowValidationException, FlowExecutionException
+from services.component_manager import ComponentManager
 
 logger = logging.getLogger(__name__)
 
+# Rest of your flow_executor.py code stays the same...
 class FlowExecutor:
     """Execute complete flows with dependency resolution and optimization"""
     
