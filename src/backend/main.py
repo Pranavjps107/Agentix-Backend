@@ -20,20 +20,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 import uvicorn
 
-# Import API routes - handle both relative and absolute imports
-try:
-    from .api.routes import components, flows, health
-    from .core.registry import ComponentRegistry
-    from .services.component_manager import ComponentManager
-    from .services.storage import StorageService
-    from .components import *
-except ImportError:
-    # Fallback for direct execution
-    from api.routes import components, flows, health
-    from core.registry import ComponentRegistry
-    from services.component_manager import ComponentManager
-    from services.storage import StorageService
-    import components as comp_module
+# Import API routes with absolute imports
+from api.routes import components, flows, health
+from core.registry import ComponentRegistry
+from services.component_manager import ComponentManager
+from services.storage import StorageService
+
+# Import all component modules to trigger registration
+import components as comp_module
 
 # Configure logging
 logging.basicConfig(
@@ -83,10 +77,10 @@ async def lifespan(app: FastAPI):
     # Cleanup resources
     try:
         # Clear caches
-        component_manager.clear_cache()
-        logger.info("Cleared component caches")
+        if 'component_manager' in locals():
+            component_manager.clear_cache()
+            logger.info("Cleared component caches")
         
-        # Any other cleanup
         logger.info("Cleanup completed")
         
     except Exception as e:
@@ -218,16 +212,6 @@ async def get_platform_info():
         }
     }
 
-# Serve static files (for frontend)
-try:
-    static_path = backend_dir / "static"
-    if static_path.exists():
-        app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
-        logger.info("Static files mounted at /static")
-except Exception as e:
-   logger.warning(f"Static files directory not found: {str(e)}")
-
-# Additional utility endpoints
 @app.get("/status")
 async def get_status():
    """Quick status check"""
