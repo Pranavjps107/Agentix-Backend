@@ -1,25 +1,41 @@
 """
 Flow Execution Service
 """
-"""
-Flow Execution Service
-"""
 import asyncio
 import time
 import logging
 from typing import Dict, Any, List, Optional, Set
 from uuid import uuid4
 
-# Fix imports
-from models.flow import FlowDefinition, FlowNode, FlowEdge, FlowStatus
-from models.execution import ExecutionResult, ExecutionStatus, TaskInfo, ExecutionStep
-from core.registry import ComponentRegistry
-from core.exceptions import FlowException, FlowValidationException, FlowExecutionException
-from services.component_manager import ComponentManager
+from ..models.flow import FlowDefinition, FlowNode, FlowEdge, FlowStatus
+from ..models.execution import ExecutionResult, ExecutionStatus, TaskInfo, ExecutionStep
+from ..core.registry import ComponentRegistry
+from ..core.exceptions import FlowException, FlowValidationException, FlowExecutionException
+from .component_manager import ComponentManager
 
 logger = logging.getLogger(__name__)
 
-# Rest of your flow_executor.py code stays the same...
+# Component name mapping for flow validation
+COMPONENT_NAME_MAPPING = {
+    "Text Input": "Text Input",
+    "ChatModel": "Chat Model", 
+    "Chat Model": "Chat Model",
+    "OpenAI LLM": "OpenAI LLM",
+    "LLM Model": "LLM Model",
+    "Web Search Tool": "Web Search Tool",
+    "OpenAI Functions Agent": "OpenAI Functions Agent",
+    "Agent Executor": "Agent Executor",
+    "Embeddings": "Embeddings",
+    "Vector Store": "Vector Store",
+    "Vector Store Retriever": "Vector Store Retriever",
+    "Prompt Template": "Prompt Template",
+    "String Output Parser": "String Output Parser"
+}
+
+def map_component_name(flow_component_name: str) -> str:
+    """Map flow component name to registered component name"""
+    return COMPONENT_NAME_MAPPING.get(flow_component_name, flow_component_name)
+
 class FlowExecutor:
     """Execute complete flows with dependency resolution and optimization"""
     
@@ -69,9 +85,12 @@ class FlowExecutor:
                     
                     logger.info(f"Executing node {node_id} ({node.component_type})")
                     
+                    # Map component name before execution
+                    mapped_component_name = map_component_name(node.component_type)
+                    
                     # Execute component
                     result = await self.component_manager.execute_component(
-                        component_name=node.component_type,
+                        component_name=mapped_component_name,
                         inputs=node_inputs,
                         component_id=node.id
                     )
@@ -362,9 +381,15 @@ class FlowExecutor:
         try:
             # Check for missing components
             for node in flow_definition.nodes:
-                component_class = ComponentRegistry.get_component(node.component_type)
+                # Map the component name
+                mapped_name = map_component_name(node.component_type)
+                component_class = ComponentRegistry.get_component(mapped_name)
                 if not component_class:
-                    errors.append(f"Component '{node.component_type}' not found for node {node.id}")
+                    # Try original name if mapping didn't work
+                    component_class = ComponentRegistry.get_component(node.component_type)
+                    if not component_class:
+                        available_components = list(ComponentRegistry._components.keys())
+                        errors.append(f"Component '{node.component_type}' not found for node {node.id}. Available components: {available_components}")
             
             # Check for circular dependencies
             try:
@@ -398,8 +423,12 @@ class FlowExecutor:
                     target_node = self._get_node_by_id(flow_definition, edge.target)
                     
                     if source_node and target_node:
-                        source_component = ComponentRegistry.get_component_instance(source_node.component_type)
-                        target_component = ComponentRegistry.get_component_instance(target_node.component_type)
+                        # Map component names before getting instances
+                        mapped_source_name = map_component_name(source_node.component_type)
+                        mapped_target_name = map_component_name(target_node.component_type)
+                        
+                        source_component = ComponentRegistry.get_component_instance(mapped_source_name)
+                        target_component = ComponentRegistry.get_component_instance(mapped_target_name)
                         
                         if source_component and target_component:
                             # Check if output exists
@@ -525,209 +554,209 @@ class FlowExecutor:
             ]
         
         elif "embeddings" in component_type.lower():
-           model_name = node_data.get('model_name', 'text-embedding-ada-002')
-           provider = node_data.get('provider', 'openai')
-           
-           if provider == 'openai':
-               return [
-                   f"# {component_type}",
-                   f"from langchain_openai import OpenAIEmbeddings",
-                   f"{var_name} = OpenAIEmbeddings(model='{model_name}')"
-               ]
-           else:
-               return [
-                   f"# {component_type}",
-                   f"from langchain_community.embeddings import HuggingFaceEmbeddings",
-                   f"{var_name} = HuggingFaceEmbeddings(model_name='{model_name}')"
-               ]
-       
+            model_name = node_data.get('model_name', 'text-embedding-ada-002')
+            provider = node_data.get('provider', 'openai')
+            
+            if provider == 'openai':
+                return [
+                    f"# {component_type}",
+                    f"from langchain_openai import OpenAIEmbeddings",
+                    f"{var_name} = OpenAIEmbeddings(model='{model_name}')"
+                ]
+            else:
+                return [
+                    f"# {component_type}",
+                    f"from langchain_community.embeddings import HuggingFaceEmbeddings",
+                    f"{var_name} = HuggingFaceEmbeddings(model_name='{model_name}')"
+                ]
+        
         elif "vector" in component_type.lower():
-           return [
-               f"# {component_type}",
-               f"# Vector store setup would require additional configuration",
-               f"{var_name} = RunnablePassthrough()  # Placeholder for vector store"
-           ]
-       
+            return [
+                f"# {component_type}",
+                f"# Vector store setup would require additional configuration",
+                f"{var_name} = RunnablePassthrough()  # Placeholder for vector store"
+            ]
+        
         elif "retriever" in component_type.lower():
-           return [
-               f"# {component_type}",
-               f"# Retriever setup would require vector store configuration", 
-               f"{var_name} = RunnablePassthrough()  # Placeholder for retriever"
-           ]
-       
+            return [
+                f"# {component_type}",
+                f"# Retriever setup would require vector store configuration", 
+                f"{var_name} = RunnablePassthrough()  # Placeholder for retriever"
+            ]
+        
         else:
-           return [
-               f"# {component_type} - Custom implementation needed",
-               f"{var_name} = RunnablePassthrough()  # Placeholder"
-           ]
-   
+            return [
+                f"# {component_type} - Custom implementation needed",
+                f"{var_name} = RunnablePassthrough()  # Placeholder"
+            ]
+    
     async def export_as_json(self, flow_definition: FlowDefinition) -> str:
-       """Export flow as JSON"""
-       import json
-       return json.dumps(flow_definition.dict(), indent=2)
-   
+        """Export flow as JSON"""
+        import json
+        return json.dumps(flow_definition.dict(), indent=2)
+    
     async def optimize_flow(self, flow_definition: FlowDefinition) -> FlowDefinition:
-       """Optimize flow execution order and remove redundant connections"""
-       # This is a placeholder for flow optimization logic
-       # Could include:
-       # - Removing redundant edges
-       # - Optimizing execution order
-       # - Parallel execution opportunities
-       # - Component fusion where possible
-       
-       optimized_flow = FlowDefinition(**flow_definition.dict())
-       optimized_flow.metadata = optimized_flow.metadata or {}
-       optimized_flow.metadata["optimized"] = True
-       optimized_flow.metadata["optimization_timestamp"] = time.time()
-       
-       return optimized_flow
-   
+        """Optimize flow execution order and remove redundant connections"""
+        # This is a placeholder for flow optimization logic
+        # Could include:
+        # - Removing redundant edges
+        # - Optimizing execution order
+        # - Parallel execution opportunities
+        # - Component fusion where possible
+        
+        optimized_flow = FlowDefinition(**flow_definition.dict())
+        optimized_flow.metadata = optimized_flow.metadata or {}
+        optimized_flow.metadata["optimized"] = True
+        optimized_flow.metadata["optimization_timestamp"] = time.time()
+        
+        return optimized_flow
+    
     @staticmethod
     async def get_flow_templates() -> List[Dict[str, Any]]:
-       """Get predefined flow templates"""
-       templates = [
-           {
-               "id": "simple-chat",
-               "name": "Simple Chatbot",
-               "description": "A basic chatbot using LLM",
-               "category": "conversational",
-               "difficulty": "beginner",
-               "flow_definition": {
-                   "id": "template-simple-chat",
-                   "name": "Simple Chatbot Template",
-                   "nodes": [
-                       {
-                           "id": "input-1",
-                           "component_type": "Text Input",
-                           "position": {"x": 100, "y": 100},
-                           "data": {"placeholder": "Enter your message..."}
-                       },
-                       {
-                           "id": "llm-1",
-                           "component_type": "OpenAI LLM",
-                           "position": {"x": 400, "y": 100},
-                           "data": {
-                               "model": "gpt-3.5-turbo",
-                               "temperature": 0.7,
-                               "max_tokens": 200
-                           }
-                       },
-                       {
-                           "id": "output-1",
-                           "component_type": "Text Output",
-                           "position": {"x": 700, "y": 100}
-                       }
-                   ],
-                   "edges": [
-                       {
-                           "id": "edge-1",
-                           "source": "input-1",
-                           "target": "llm-1",
-                           "source_handle": "text",
-                           "target_handle": "prompt"
-                       },
-                       {
-                           "id": "edge-2", 
-                           "source": "llm-1",
-                           "target": "output-1",
-                           "source_handle": "response",
-                           "target_handle": "text"
-                       }
-                   ]
-               }
-           },
-           {
-               "id": "rag-pipeline",
-               "name": "RAG Pipeline",
-               "description": "Retrieval-Augmented Generation pipeline",
-               "category": "rag",
-               "difficulty": "intermediate",
-               "flow_definition": {
-                   "id": "template-rag-pipeline",
-                   "name": "RAG Pipeline Template", 
-                   "nodes": [
-                       {
-                           "id": "query-1",
-                           "component_type": "Text Input",
-                           "position": {"x": 100, "y": 100}
-                       },
-                       {
-                           "id": "embeddings-1",
-                           "component_type": "Embeddings",
-                           "position": {"x": 300, "y": 100},
-                           "data": {"provider": "openai"}
-                       },
-                       {
-                           "id": "retriever-1",
-                           "component_type": "Vector Store Retriever",
-                           "position": {"x": 500, "y": 100},
-                           "data": {"k": 5}
-                       },
-                       {
-                           "id": "prompt-1",
-                           "component_type": "Prompt Template",
-                           "position": {"x": 300, "y": 300},
-                           "data": {
-                               "template": "Context: {context}\n\nQuestion: {question}\n\nAnswer:"
-                           }
-                       },
-                       {
-                           "id": "llm-1",
-                           "component_type": "OpenAI LLM",
-                           "position": {"x": 500, "y": 300}
-                       }
-                   ],
-                   "edges": [
-                       {
-                           "id": "edge-1",
-                           "source": "query-1",
-                           "target": "retriever-1"
-                       },
-                       {
-                           "id": "edge-2",
-                           "source": "retriever-1", 
-                           "target": "prompt-1",
-                           "source_handle": "documents",
-                           "target_handle": "context"
-                       },
-                       {
-                           "id": "edge-3",
-                           "source": "query-1",
-                           "target": "prompt-1",
-                           "source_handle": "text",
-                           "target_handle": "question"
-                       },
-                       {
-                           "id": "edge-4",
-                           "source": "prompt-1",
-                           "target": "llm-1"
-                       }
-                   ]
-               }
-           }
-       ]
-       
-       return templates
-   
+        """Get predefined flow templates"""
+        templates = [
+            {
+                "id": "simple-chat",
+                "name": "Simple Chatbot",
+                "description": "A basic chatbot using LLM",
+                "category": "conversational",
+                "difficulty": "beginner",
+                "flow_definition": {
+                    "id": "template-simple-chat",
+                    "name": "Simple Chatbot Template",
+                    "nodes": [
+                        {
+                            "id": "input-1",
+                            "component_type": "Text Input",
+                            "position": {"x": 100, "y": 100},
+                            "data": {"placeholder": "Enter your message..."}
+                        },
+                        {
+                            "id": "llm-1",
+                            "component_type": "OpenAI LLM",
+                            "position": {"x": 400, "y": 100},
+                            "data": {
+                                "model": "gpt-3.5-turbo",
+                                "temperature": 0.7,
+                                "max_tokens": 200
+                            }
+                        },
+                        {
+                            "id": "output-1",
+                            "component_type": "Text Output",
+                            "position": {"x": 700, "y": 100}
+                        }
+                    ],
+                    "edges": [
+                        {
+                            "id": "edge-1",
+                            "source": "input-1",
+                            "target": "llm-1",
+                            "source_handle": "text",
+                            "target_handle": "prompt"
+                        },
+                        {
+                            "id": "edge-2", 
+                            "source": "llm-1",
+                            "target": "output-1",
+                            "source_handle": "response",
+                            "target_handle": "text"
+                        }
+                    ]
+                }
+            },
+            {
+                "id": "rag-pipeline",
+                "name": "RAG Pipeline",
+                "description": "Retrieval-Augmented Generation pipeline",
+                "category": "rag",
+                "difficulty": "intermediate",
+                "flow_definition": {
+                    "id": "template-rag-pipeline",
+                    "name": "RAG Pipeline Template", 
+                    "nodes": [
+                        {
+                            "id": "query-1",
+                            "component_type": "Text Input",
+                            "position": {"x": 100, "y": 100}
+                        },
+                        {
+                            "id": "embeddings-1",
+                            "component_type": "Embeddings",
+                            "position": {"x": 300, "y": 100},
+                            "data": {"provider": "openai"}
+                        },
+                        {
+                            "id": "retriever-1",
+                            "component_type": "Vector Store Retriever",
+                            "position": {"x": 500, "y": 100},
+                            "data": {"k": 5}
+                        },
+                        {
+                            "id": "prompt-1",
+                            "component_type": "Prompt Template",
+                            "position": {"x": 300, "y": 300},
+                            "data": {
+                                "template": "Context: {context}\n\nQuestion: {question}\n\nAnswer:"
+                            }
+                        },
+                        {
+                            "id": "llm-1",
+                            "component_type": "OpenAI LLM",
+                            "position": {"x": 500, "y": 300}
+                        }
+                    ],
+                    "edges": [
+                        {
+                            "id": "edge-1",
+                            "source": "query-1",
+                            "target": "retriever-1"
+                        },
+                        {
+                            "id": "edge-2",
+                            "source": "retriever-1", 
+                            "target": "prompt-1",
+                            "source_handle": "documents",
+                            "target_handle": "context"
+                        },
+                        {
+                            "id": "edge-3",
+                            "source": "query-1",
+                            "target": "prompt-1",
+                            "source_handle": "text",
+                            "target_handle": "question"
+                        },
+                        {
+                            "id": "edge-4",
+                            "source": "prompt-1",
+                            "target": "llm-1"
+                        }
+                    ]
+                }
+            }
+        ]
+        
+        return templates
+    
     def get_execution_stats(self) -> Dict[str, Any]:
-       """Get flow execution statistics"""
-       active_count = len(self.active_executions)
-       total_executions = len(self.execution_cache)
-       
-       completed_count = sum(
-           1 for task in self.execution_cache.values()
-           if task.status == ExecutionStatus.COMPLETED
-       )
-       
-       failed_count = sum(
-           1 for task in self.execution_cache.values() 
-           if task.status == ExecutionStatus.FAILED
-       )
-       
-       return {
-           "active_executions": active_count,
-           "total_executions": total_executions,
-           "completed_executions": completed_count,
-           "failed_executions": failed_count,
-           "success_rate": completed_count / total_executions if total_executions > 0 else 0
-       }
+        """Get flow execution statistics"""
+        active_count = len(self.active_executions)
+        total_executions = len(self.execution_cache)
+        
+        completed_count = sum(
+            1 for task in self.execution_cache.values()
+            if task.status == ExecutionStatus.COMPLETED
+        )
+        
+        failed_count = sum(
+            1 for task in self.execution_cache.values() 
+            if task.status == ExecutionStatus.FAILED
+        )
+        
+        return {
+            "active_executions": active_count,
+            "total_executions": total_executions,
+            "completed_executions": completed_count,
+            "failed_executions": failed_count,
+            "success_rate": completed_count / total_executions if total_executions > 0 else 0
+        }

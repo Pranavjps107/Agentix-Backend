@@ -31,7 +31,7 @@ class FlowNode(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_json_json_schema_extra = {
             "example": {
                 "id": "node-1",
                 "component_type": "OpenAI LLM",
@@ -56,7 +56,7 @@ class FlowEdge(BaseModel):
     animated: bool = False
     
     class Config:
-        schema_extra = {
+        json_json_json_schema_extra = {
             "example": {
                 "id": "edge-1",
                 "source": "node-1",
@@ -108,7 +108,7 @@ class FlowDefinition(BaseModel):
         return v
     
     class Config:
-        schema_extra = {
+        json_json_json_schema_extra = {
             "example": {
                 "id": "flow-1",
                 "name": "Simple Chat Flow",
@@ -146,7 +146,7 @@ class FlowExecutionRequest(BaseModel):
     save_intermediate_results: bool = True
     
     class Config:
-        schema_extra = {
+        json_json_json_schema_extra = {
             "example": {
                 "flow_definition": {
                     "id": "flow-1",
@@ -176,7 +176,7 @@ class FlowExecutionResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     
     class Config:
-        schema_extra = {
+        json_json_json_schema_extra = {
             "example": {
                 "success": True,
                 "outputs": {"final_response": "Hello! How can I help?"},
@@ -204,7 +204,7 @@ class FlowTemplate(BaseModel):
     estimated_time: Optional[str] = None
     
     class Config:
-        schema_extra = {
+        json_json_json_schema_extra = {
             "example": {
                 "id": "template-chatbot",
                 "name": "Basic Chatbot",

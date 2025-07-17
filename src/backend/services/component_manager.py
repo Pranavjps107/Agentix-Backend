@@ -1,22 +1,30 @@
 """
 Component Manager Service
 """
-"""
-Component Manager Service
-"""
 import asyncio
 import time
 import logging
 from typing import Dict, Any, Optional, List
 from uuid import uuid4
 
-# Fix imports - use absolute imports
-from core.registry import ComponentRegistry
-from core.exceptions import ExecutionException, ValidationException
-from models.component import ComponentResponse, ComponentStats
-from models.execution import ExecutionResult, ExecutionStatus
-from services.caching import CacheManager
+from ..core.registry import ComponentRegistry
+from ..core.exceptions import ExecutionException, ValidationException
+from ..models.component import ComponentResponse, ComponentStats
+from ..models.execution import ExecutionResult, ExecutionStatus
+from .caching import CacheManager
 
+logger = logging.getLogger(__name__)
+
+class ComponentManager:
+    """Manages component execution, caching, and monitoring"""
+    
+    def __init__(self):
+        self.execution_cache: Dict[str, Any] = {}
+        self.component_instances: Dict[str, Any] = {}
+        self.execution_stats: Dict[str, ComponentStats] = {}
+        self.cache_manager = CacheManager()
+    
+    # ... rest of the class implementation stays the same
 logger = logging.getLogger(__name__)
 
 # Rest of your component_manager.py code stays the same...

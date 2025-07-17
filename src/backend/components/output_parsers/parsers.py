@@ -7,7 +7,7 @@ from langchain_core.output_parsers.openai_functions import (
     JsonOutputFunctionsParser, PydanticOutputFunctionsParser
 )
 from pydantic import BaseModel
-from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 from typing import Dict, Type,List , Any
 @register_component
 class StringOutputParserComponent(BaseLangChainComponent):

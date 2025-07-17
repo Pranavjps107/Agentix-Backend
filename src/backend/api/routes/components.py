@@ -8,9 +8,9 @@ import logging
 import time
 
 # Fix the imports
-from core.registry import ComponentRegistry
-from services.component_manager import ComponentManager
-from models.component import ComponentExecutionRequest, ComponentResponse
+from ...core.registry import ComponentRegistry
+from ...services.component_manager import ComponentManager
+from ...models.component import ComponentExecutionRequest, ComponentResponse
 
 logger = logging.getLogger(__name__)
 

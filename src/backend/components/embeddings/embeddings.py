@@ -1,6 +1,6 @@
 # src/backend/components/embeddings/embeddings.py
 from langchain_core.embeddings import Embeddings
-from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 from typing import Dict, Type,List , Any
 @register_component
 class EmbeddingsComponent(BaseLangChainComponent):

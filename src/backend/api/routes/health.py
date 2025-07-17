@@ -12,7 +12,7 @@ import psutil
 import logging
 
 # Fix the imports
-from core.registry import ComponentRegistry
+from ...core.registry import ComponentRegistry
 
 logger = logging.getLogger(__name__)
 

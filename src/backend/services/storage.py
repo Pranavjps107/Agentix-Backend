@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 import logging
 
 # Fix imports
-from models.flow import FlowDefinition
-from models.execution import ExecutionResult, ExecutionLog
+from ..models.flow import FlowDefinition
+from ..models.execution import ExecutionResult, ExecutionLog
 
 logger = logging.getLogger(__name__)
 

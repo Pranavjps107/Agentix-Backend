@@ -2,7 +2,7 @@
 Fake LLM Component for Testing
 """
 from typing import Dict, Any
-from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 
 @register_component
 class FakeLLMComponent(BaseLangChainComponent):

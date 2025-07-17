@@ -3,7 +3,7 @@ Base Chat Model Component
 """
 from typing import Dict, Any, List, Optional
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
-from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 
 @register_component
 class ChatModelComponent(BaseLangChainComponent):
@@ -11,7 +11,7 @@ class ChatModelComponent(BaseLangChainComponent):
     
     def _setup_component(self):
         self.metadata = ComponentMetadata(
-            display_name="Chat Model",
+            display_name="ChatModel",  # Changed from "Chat Model" to match flow definition
             description="Chat-based language model for conversations",
             icon="💬",
             category="language_models",
@@ -39,6 +39,7 @@ class ChatModelComponent(BaseLangChainComponent):
                 name="messages",
                 display_name="Messages",
                 field_type="list",
+                required=False,
                 description="List of chat messages with role and content"
             ),
             ComponentInput(
@@ -72,6 +73,13 @@ class ChatModelComponent(BaseLangChainComponent):
                 required=False,
                 password=True,
                 description="API key for the provider"
+            ),
+            ComponentInput(
+                name="user_input",
+                display_name="User Input",
+                field_type="str",
+                required=False,
+                description="Direct user input message"
             )
         ]
         
@@ -103,17 +111,25 @@ class ChatModelComponent(BaseLangChainComponent):
                 field_type="dict",
                 method="get_usage_stats",
                 description="Token usage statistics"
+            ),
+            ComponentOutput(
+                name="chat_model",
+                display_name="Chat Model Instance",
+                field_type="chat_model",
+                method="get_chat_model_instance",
+                description="The chat model instance for use with agents"
             )
         ]
     
     async def execute(self, **kwargs) -> Dict[str, Any]:
         provider = kwargs.get("provider", "openai")
-        model = kwargs.get("model", "gpt-3.5-turbo")
+        model = kwargs.get("model", "gpt-4")  # Changed default to gpt-4
         messages = kwargs.get("messages", [])
         system_message = kwargs.get("system_message")
         temperature = kwargs.get("temperature", 0.7)
         max_tokens = kwargs.get("max_tokens", 512)
         api_key = kwargs.get("api_key")
+        user_input = kwargs.get("user_input")
         
         # Build message list
         chat_messages = []
@@ -137,11 +153,22 @@ class ChatModelComponent(BaseLangChainComponent):
             elif isinstance(msg, BaseMessage):
                 chat_messages.append(msg)
         
-        if not chat_messages:
-            raise ValueError("At least one message is required")
+        # Add user input as human message if provided
+        if user_input:
+            chat_messages.append(HumanMessage(content=user_input))
         
         # Get chat model instance
         chat_model = self._get_chat_model_instance(provider, model, temperature, max_tokens, api_key)
+        
+        # If no messages, return the chat model instance for use with agents
+        if not chat_messages:
+            return {
+                "response": "",
+                "message_object": {},
+                "conversation_history": [],
+                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                "chat_model": chat_model
+            }
         
         # Generate response
         try:
@@ -180,7 +207,8 @@ class ChatModelComponent(BaseLangChainComponent):
                 "response": ai_message.content,
                 "message_object": message_object,
                 "conversation_history": updated_conversation,
-                "usage": usage
+                "usage": usage,
+                "chat_model": chat_model
             }
             
         except Exception as e:
@@ -248,3 +276,12 @@ class ChatModelComponent(BaseLangChainComponent):
             return "system"
         else:
             return "unknown"
+
+# Create an alias for backward compatibility
+@register_component
+class ChatModel(ChatModelComponent):
+    """Alias for ChatModelComponent to match flow definitions"""
+    
+    def _setup_component(self):
+        super()._setup_component()
+        self.metadata.display_name = "Chat Model"

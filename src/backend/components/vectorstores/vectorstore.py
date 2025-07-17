@@ -1,7 +1,7 @@
 # src/backend/components/vectorstores/vectorstore.py
 from langchain_core.vectorstores import VectorStore
 from langchain_core.documents import Document
-from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
 from typing import Dict, Type,List , Any
 
 @register_component
