@@ -3,8 +3,6 @@ Main FastAPI application
 """
 import logging
 import time
-import sys
-import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,45 +10,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 import uvicorn
 
-# Add the project root to Python path
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, project_root)
-
-# Import API routes - using absolute imports
-from src.backend.api.routes import components, flows, health
+# Import API routes
+from .api.routes import components, flows, health
 
 # Import core components to ensure registration
-from src.backend.core.registry import ComponentRegistry
-from src.backend.services.component_manager import ComponentManager
-from src.backend.services.storage import StorageService
-
-# CRITICAL: Import ALL component modules to trigger registration
-# This ensures components are registered before the server starts
-
-# Add the components path to ensure imports work
-sys.path.append(os.path.join(os.path.dirname(__file__), 'components'))
-
-# Import all component categories - this triggers @register_component decorators
-try:
-    from src.backend.components.llms import *
-    from src.backend.components.chat_models import *
-    from src.backend.components.embeddings import *
-    from src.backend.components.agents import *
-    from src.backend.components.tools import *
-    from src.backend.components.document_loaders import *
-    from src.backend.components.vectorstores import *
-    from src.backend.components.output_parsers import *
-    from src.backend.components.prompts import *
-    from src.backend.components.retrievers import *
-    from src.backend.components.memory import *
-    from src.backend.components.callbacks import *
-    from src.backend.components.runnables import *
-    
-    # Import any remaining components
-    from src.backend.components import *
-    
-except ImportError as e:
-    logging.warning(f"Failed to import some component modules: {e}")
+from .core.registry import ComponentRegistry
+from .services.component_manager import ComponentManager
+from .services.storage import StorageService
 
 # Configure logging
 logging.basicConfig(
@@ -58,6 +24,97 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+def register_components_manually():
+    """Manually register components"""
+    try:
+        # Import and register core components
+        from .components.llms.base_llm import LLMComponent
+        from .components.llms.fake_llm import FakeLLMComponent
+        from .components.chat_models.base_chat import ChatModelComponent
+        from .components.embeddings.base_embeddings import EmbeddingsComponent
+        
+        # Register them manually
+        ComponentRegistry.register(LLMComponent)
+        ComponentRegistry.register(FakeLLMComponent)
+        ComponentRegistry.register(ChatModelComponent)
+        ComponentRegistry.register(EmbeddingsComponent)
+        
+        logger.info("Core components registered successfully")
+        
+        # Try to create and register input components
+        try:
+            from .components.inputs.text_input import TextInputComponent
+            from .components.inputs.file_input import FileInputComponent
+            ComponentRegistry.register(TextInputComponent)
+            ComponentRegistry.register(FileInputComponent)
+            logger.info("Input components registered successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import input components: {e}")
+            # Create a simple text input component inline
+            from .core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
+            
+            class SimpleTextInput(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Text Input",
+                        description="Simple text input component",
+                        icon="📝",
+                        category="inputs",
+                        tags=["input", "text"]
+                    )
+                    self.inputs = [
+                        ComponentInput(
+                            name="text",
+                            display_name="Input Text", 
+                            field_type="str",
+                            description="Input text"
+                        )
+                    ]
+                    self.outputs = [
+                        ComponentOutput(
+                            name="text",
+                            display_name="Output Text",
+                            field_type="str", 
+                            method="get_text",
+                            description="The input text"
+                        )
+                    ]
+                
+                async def execute(self, **kwargs):
+                    text = kwargs.get("text", "")
+                    return {"text": text, "length": len(text)}
+            
+            ComponentRegistry.register(SimpleTextInput)
+            logger.info("Simple text input component created and registered")
+        
+        # Try to register other components
+        try:
+            from .components.prompts.prompt_templates import PromptTemplateComponent
+            ComponentRegistry.register(PromptTemplateComponent)
+        except ImportError:
+            logger.warning("Could not import prompt components")
+        
+        try:
+            from .components.output_parsers.parsers import StringOutputParserComponent
+            ComponentRegistry.register(StringOutputParserComponent)
+        except ImportError:
+            logger.warning("Could not import output parser components")
+            
+        logger.info("Manual component registration completed")
+        
+    except Exception as e:
+        logger.error(f"Manual registration failed: {e}")
+
+# Import components at module level (before the function)
+try:
+    # Try to import all components
+    from .components.llms import base_llm, fake_llm, openai_llm, anthropic_llm
+    from .components.chat_models import base_chat
+    from .components.embeddings import base_embeddings
+    logger.info("Successfully imported component modules")
+except ImportError as e:
+    logger.warning(f"Failed to import some component modules: {e}")
 
 # Track application startup time
 startup_time = time.time()
@@ -69,16 +126,21 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 50)
     logger.info("Starting LangChain Platform...")
     
-    # Force registration of all components
-    _register_missing_components()
+    # Manual registration
+    register_components_manually()
     
     # Log registered components
     component_count = len(ComponentRegistry._components)
     categories = ComponentRegistry.get_categories()
     logger.info(f"Registered {component_count} components across {len(categories)} categories")
     
+    # List all registered components
+    logger.info("Registered components:")
+    for name in ComponentRegistry._components.keys():
+        logger.info(f"  - {name}")
+    
     for category, component_list in categories.items():
-        logger.info(f"  {category}: {len(component_list)} components")
+        logger.info(f"Category '{category}': {component_list}")
     
     # Initialize services
     try:
@@ -114,351 +176,6 @@ async def lifespan(app: FastAPI):
     
     logger.info("LangChain Platform shut down")
 
-def _register_missing_components():
-    """Register commonly needed components that might be missing"""
-    from src.backend.core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
-    from src.backend.core.registry import register_component
-    
-    # Register Text Input component
-    @register_component
-    class TextInputComponent(BaseLangChainComponent):
-        def _setup_component(self):
-            self.metadata = ComponentMetadata(
-                display_name="Text Input",
-                description="Text input component for user queries",
-                icon="📝",
-                category="input",
-                tags=["input", "text"]
-            )
-            self.inputs = [
-                ComponentInput(
-                    name="placeholder",
-                    display_name="Placeholder",
-                    field_type="str",
-                    default="Enter text...",
-                    required=False,
-                    description="Placeholder text"
-                ),
-                ComponentInput(
-                    name="text",
-                    display_name="Text",
-                    field_type="str",
-                    default="",
-                    required=False,
-                    description="Input text"
-                )
-            ]
-            self.outputs = [
-                ComponentOutput(
-                    name="text",
-                    display_name="Text Output",
-                    field_type="str",
-                    method="get_text",
-                    description="Input text"
-                )
-            ]
-        
-        async def execute(self, **kwargs):
-            text = kwargs.get("text", "")
-            return {"text": text}
-    
-    # Register Chat Model component
-    @register_component
-    class ChatModelComponent(BaseLangChainComponent):
-        def _setup_component(self):
-            self.metadata = ComponentMetadata(
-                display_name="Chat Model",
-                description="Chat-based language model for conversations",
-                icon="💬",
-                category="language_models",
-                tags=["chat", "conversation", "messages", "ai"]
-            )
-            self.inputs = [
-                ComponentInput(
-                    name="provider",
-                    display_name="Provider",
-                    field_type="str",
-                    options=["openai", "anthropic", "google", "fake"],
-                    default="fake",
-                    description="Chat model provider"
-                ),
-                ComponentInput(
-                    name="model",
-                    display_name="Model",
-                    field_type="str",
-                    default="gpt-3.5-turbo",
-                    description="Chat model name"
-                ),
-                ComponentInput(
-                    name="messages",
-                    display_name="Messages",
-                    field_type="list",
-                    default=[],
-                    required=False,
-                    description="List of chat messages"
-                ),
-                ComponentInput(
-                    name="temperature",
-                    display_name="Temperature",
-                    field_type="float",
-                    default=0.7,
-                    required=False,
-                    description="Controls randomness in responses"
-                ),
-                ComponentInput(
-                    name="max_tokens",
-                    display_name="Max Tokens",
-                    field_type="int",
-                    default=512,
-                    required=False,
-                    description="Maximum tokens in response"
-                )
-            ]
-            self.outputs = [
-                ComponentOutput(
-                    name="response",
-                    display_name="Chat Response",
-                    field_type="str",
-                    method="generate_response",
-                    description="The chat model's response"
-                ),
-                ComponentOutput(
-                    name="message_object",
-                    display_name="Message Object",
-                    field_type="dict",
-                    method="get_message_object",
-                    description="Full message object"
-                )
-            ]
-        
-        async def execute(self, **kwargs):
-            provider = kwargs.get("provider", "fake")
-            model = kwargs.get("model", "gpt-3.5-turbo")
-            messages = kwargs.get("messages", [])
-            temperature = kwargs.get("temperature", 0.7)
-            max_tokens = kwargs.get("max_tokens", 512)
-            
-            # For fake provider, return mock response
-            if provider == "fake":
-                response = f"Mock response from {model}"
-                message_object = {
-                    "content": response,
-                    "role": "assistant",
-                    "provider": provider,
-                    "model": model
-                }
-                return {
-                    "response": response,
-                    "message_object": message_object
-                }
-            
-            # For real providers, you would implement actual chat model logic here
-            return {
-                "response": f"Response from {provider} {model}",
-                "message_object": {
-                    "content": f"Response from {provider} {model}",
-                    "role": "assistant",
-                    "provider": provider,
-                    "model": model
-                }
-            }
-    
-    # Register OpenAI Functions Agent component
-    @register_component
-    class OpenAIFunctionsAgentComponent(BaseLangChainComponent):
-        def _setup_component(self):
-            self.metadata = ComponentMetadata(
-                display_name="OpenAI Functions Agent",
-                description="Agent that uses OpenAI function calling",
-                icon="🤖",
-                category="agents",
-                tags=["agent", "openai", "functions"]
-            )
-            self.inputs = [
-                ComponentInput(
-                    name="llm",
-                    display_name="Language Model",
-                    field_type="dict",
-                    description="Chat model for the agent"
-                ),
-                ComponentInput(
-                    name="tools",
-                    display_name="Tools",
-                    field_type="list",
-                    default=[],
-                    description="List of tools available to the agent"
-                ),
-                ComponentInput(
-                    name="system_message",
-                    display_name="System Message",
-                    field_type="str",
-                    default="You are a helpful assistant.",
-                    required=False,
-                    description="System prompt for the agent"
-                ),
-                ComponentInput(
-                    name="max_iterations",
-                    display_name="Max Iterations",
-                    field_type="int",
-                    default=10,
-                    required=False,
-                    description="Maximum number of iterations"
-                )
-            ]
-            self.outputs = [
-                ComponentOutput(
-                    name="agent",
-                    display_name="Agent",
-                    field_type="dict",
-                    method="create_agent",
-                    description="Configured agent"
-                )
-            ]
-        
-        async def execute(self, **kwargs):
-            llm = kwargs.get("llm", {})
-            tools = kwargs.get("tools", [])
-            system_message = kwargs.get("system_message", "You are a helpful assistant.")
-            max_iterations = kwargs.get("max_iterations", 10)
-            
-            agent_config = {
-                "type": "openai_functions",
-                "llm": llm,
-                "tools": tools,
-                "system_message": system_message,
-                "max_iterations": max_iterations
-            }
-            
-            return {"agent": agent_config}
-    
-    # Register Agent Executor component
-    @register_component
-    class AgentExecutorComponent(BaseLangChainComponent):
-        def _setup_component(self):
-            self.metadata = ComponentMetadata(
-                display_name="Agent Executor",
-                description="Execute agent with input query",
-                icon="⚡",
-                category="agents",
-                tags=["agent", "executor"]
-            )
-            self.inputs = [
-                ComponentInput(
-                    name="agent",
-                    display_name="Agent",
-                    field_type="dict",
-                    description="Agent to execute"
-                ),
-                ComponentInput(
-                    name="input_query",
-                    display_name="Input Query",
-                    field_type="str",
-                    description="Query to send to the agent"
-                ),
-                ComponentInput(
-                    name="return_intermediate_steps",
-                    display_name="Return Intermediate Steps",
-                    field_type="bool",
-                    default=True,
-                    required=False,
-                    description="Return reasoning steps"
-                )
-            ]
-            self.outputs = [
-                ComponentOutput(
-                    name="response",
-                    display_name="Response",
-                    field_type="str",
-                    method="execute_agent",
-                    description="Agent response"
-                ),
-                ComponentOutput(
-                    name="intermediate_steps",
-                    display_name="Intermediate Steps",
-                    field_type="list",
-                    method="get_steps",
-                    description="Reasoning steps"
-                )
-            ]
-        
-        async def execute(self, **kwargs):
-            agent = kwargs.get("agent", {})
-            input_query = kwargs.get("input_query", "")
-            return_intermediate_steps = kwargs.get("return_intermediate_steps", True)
-            
-            # Mock agent execution
-            response = f"Agent processed: {input_query}"
-            
-            intermediate_steps = []
-            if return_intermediate_steps:
-                intermediate_steps = [
-                    {
-                        "step": 1,
-                        "action": "thinking",
-                        "result": f"Processing query: {input_query}"
-                    },
-                    {
-                        "step": 2,
-                        "action": "response",
-                        "result": response
-                    }
-                ]
-            
-            return {
-                "response": response,
-                "intermediate_steps": intermediate_steps
-            }
-    
-    # Register Web Search Tool
-    @register_component
-    class WebSearchToolComponent(BaseLangChainComponent):
-        def _setup_component(self):
-            self.metadata = ComponentMetadata(
-                display_name="Web Search Tool",
-                description="Search the web for information",
-                icon="🔍",
-                category="tools",
-                tags=["search", "web", "information"]
-            )
-            self.inputs = [
-                ComponentInput(
-                    name="search_provider",
-                    display_name="Search Provider",
-                    field_type="str",
-                    options=["ddg", "serper", "tavily"],
-                    default="ddg",
-                    description="Web search provider"
-                ),
-                ComponentInput(
-                    name="num_results",
-                    display_name="Number of Results",
-                    field_type="int",
-                    default=5,
-                    required=False,
-                    description="Number of search results"
-                )
-            ]
-            self.outputs = [
-                ComponentOutput(
-                    name="tool",
-                    display_name="Search Tool",
-                    field_type="dict",
-                    method="create_search_tool",
-                    description="Web search tool"
-                )
-            ]
-        
-        async def execute(self, **kwargs):
-            provider = kwargs.get("search_provider", "ddg")
-            num_results = kwargs.get("num_results", 5)
-            
-            tool_config = {
-                "type": "web_search",
-                "provider": provider,
-                "num_results": num_results
-            }
-            
-            return {"tool": tool_config}
 # Create FastAPI app
 app = FastAPI(
     title="LangChain Drag-and-Drop Platform",
@@ -546,6 +263,7 @@ async def root():
         "uptime_seconds": uptime,
         "components_registered": len(ComponentRegistry._components),
         "categories": list(ComponentRegistry.get_categories().keys()),
+        "registered_components": list(ComponentRegistry._components.keys()),
         "endpoints": {
             "docs": "/docs",
             "redoc": "/redoc", 
@@ -583,7 +301,6 @@ async def get_platform_info():
         }
     }
 
-# Serve static files (for frontend)
 try:
     app.mount("/static", StaticFiles(directory="static"), name="static")
     logger.info("Static files mounted at /static")

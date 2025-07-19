@@ -1,11 +1,11 @@
-"""
-Agent Components with proper LangChain imports
-"""
-from typing import Dict, Any, List, Optional
-import logging
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
-
-logger = logging.getLogger(__name__)
+# src/backend/components/agents/agents.py (first few lines)
+from langchain.agents import AgentExecutor, create_openai_functions_agent, create_react_agent
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain.agents.format_scratchpad import format_to_openai_function_messages
+from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
+from ...core.registry import register_component  # Add this import
+from typing import Dict, Type, List, Any
 
 @register_component
 class OpenAIFunctionsAgentComponent(BaseLangChainComponent):
@@ -36,9 +36,8 @@ class OpenAIFunctionsAgentComponent(BaseLangChainComponent):
             ComponentInput(
                 name="system_message",
                 display_name="System Message",
-                field_type="str",
+                field_type="text",
                 required=False,
-                default="You are a helpful assistant.",
                 description="System prompt for the agent"
             ),
             ComponentInput(
@@ -61,11 +60,16 @@ class OpenAIFunctionsAgentComponent(BaseLangChainComponent):
         
         self.outputs = [
             ComponentOutput(
-                name="agent",
-                display_name="Agent",
-                field_type="agent",
-                method="create_agent",
-                description="Configured agent"
+                name="agent_executor",
+                display_name="Agent Executor",
+                field_type="agent_executor",
+                method="create_agent"
+            ),
+            ComponentOutput(
+                name="agent_response",
+                display_name="Agent Response",
+                field_type="dict",
+                method="run_agent"
             )
         ]
     
@@ -77,10 +81,9 @@ class OpenAIFunctionsAgentComponent(BaseLangChainComponent):
         verbose = kwargs.get("verbose", False)
         
         try:
-            # Import LangChain components - using the available imports
+            # Create agent prompt
             from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
             
-            # Create agent prompt
             prompt = ChatPromptTemplate.from_messages([
                 ("system", system_message),
                 MessagesPlaceholder("chat_history", optional=True),
@@ -88,34 +91,33 @@ class OpenAIFunctionsAgentComponent(BaseLangChainComponent):
                 MessagesPlaceholder("agent_scratchpad"),
             ])
             
-            # For now, return a simplified agent structure
-            agent_config = {
-                "type": "openai_functions",
-                "llm": llm,
-                "tools": tools,
-                "prompt": prompt,
-                "max_iterations": max_iterations,
-                "verbose": verbose
-            }
+            # Create agent using modern approach
+            agent = create_openai_functions_agent(llm, tools, prompt)
+            
+            # Create agent executor
+            agent_executor = AgentExecutor(
+                agent=agent,
+                tools=tools,
+                max_iterations=max_iterations,
+                verbose=verbose,
+                return_intermediate_steps=True
+            )
             
             return {
-                "agent": agent_config,
+                "agent_executor": agent_executor,
                 "agent_type": "openai_functions",
                 "tool_count": len(tools),
                 "max_iterations": max_iterations
             }
             
         except Exception as e:
-            logger.error(f"Failed to create OpenAI Functions Agent: {str(e)}")
-            # Return a mock agent for now
+            # Fallback to a simple mock agent for demo purposes
             return {
-                "agent": {
-                    "type": "mock_openai_functions",
-                    "error": str(e)
-                },
-                "agent_type": "mock_openai_functions",
+                "agent_executor": None,
+                "agent_type": "mock",
                 "tool_count": len(tools),
-                "max_iterations": max_iterations
+                "max_iterations": max_iterations,
+                "error": f"Agent creation failed: {str(e)}"
             }
 
 @register_component
@@ -147,7 +149,7 @@ class ReActAgentComponent(BaseLangChainComponent):
             ComponentInput(
                 name="system_message",
                 display_name="System Message",
-                field_type="str",
+                field_type="text",
                 required=False,
                 description="System prompt for the agent"
             ),
@@ -163,11 +165,16 @@ class ReActAgentComponent(BaseLangChainComponent):
         
         self.outputs = [
             ComponentOutput(
-                name="agent",
-                display_name="Agent",
-                field_type="agent",
-                method="create_react_agent",
-                description="ReAct agent"
+                name="agent_executor",
+                display_name="Agent Executor",
+                field_type="agent_executor",
+                method="create_react_agent"
+            ),
+            ComponentOutput(
+                name="agent_response",
+                display_name="Agent Response",
+                field_type="dict",
+                method="run_agent"
             )
         ]
     
@@ -178,51 +185,58 @@ class ReActAgentComponent(BaseLangChainComponent):
         max_iterations = kwargs.get("max_iterations", 10)
         
         try:
-            # Create ReAct prompt template
-            from langchain_core.prompts import PromptTemplate
+            # Create ReAct prompt
+            from langchain import hub
             
-            prompt = PromptTemplate.from_template(
-                "Answer the following questions as best you can. You have access to the following tools:\n\n"
-                "{tools}\n\n"
-                "Use the following format:\n\n"
-                "Question: the input question you must answer\n"
-                "Thought: you should always think about what to do\n"
-                "Action: the action to take, should be one of [{tool_names}]\n"
-                "Action Input: the input to the action\n"
-                "Observation: the result of the action\n"
-                "... (this Thought/Action/Action Input/Observation can repeat N times)\n"
-                "Thought: I now know the final answer\n"
-                "Final Answer: the final answer to the original input question\n\n"
-                "Begin!\n\n"
-                "Question: {input}\n"
-                "Thought:{agent_scratchpad}"
+            try:
+                prompt = hub.pull("hwchase17/react")
+            except:
+                # Fallback prompt if hub is not available
+                from langchain_core.prompts import PromptTemplate
+                prompt = PromptTemplate.from_template(
+                    "Answer the following questions as best you can. You have access to the following tools:\n\n"
+                    "{tools}\n\n"
+                    "Use the following format:\n\n"
+                    "Question: the input question you must answer\n"
+                    "Thought: you should always think about what to do\n"
+                    "Action: the action to take, should be one of [{tool_names}]\n"
+                    "Action Input: the input to the action\n"
+                    "Observation: the result of the action\n"
+                    "... (this Thought/Action/Action Input/Observation can repeat N times)\n"
+                    "Thought: I now know the final answer\n"
+                    "Final Answer: the final answer to the original input question\n\n"
+                    "Begin!\n\n"
+                    "Question: {input}\n"
+                    "Thought:{agent_scratchpad}"
+                )
+            
+            # Create ReAct agent
+            agent = create_react_agent(llm, tools, prompt)
+            
+            # Create agent executor
+            agent_executor = AgentExecutor(
+                agent=agent,
+                tools=tools,
+                max_iterations=max_iterations,
+                verbose=True,
+                return_intermediate_steps=True
             )
             
-            agent_config = {
-                "type": "react",
-                "llm": llm,
-                "tools": tools,
-                "prompt": prompt,
-                "max_iterations": max_iterations
-            }
-            
             return {
-                "agent": agent_config,
+                "agent_executor": agent_executor,
                 "agent_type": "react",
                 "tool_count": len(tools),
                 "max_iterations": max_iterations
             }
             
         except Exception as e:
-            logger.error(f"Failed to create ReAct Agent: {str(e)}")
+            # Fallback for demo purposes
             return {
-                "agent": {
-                    "type": "mock_react",
-                    "error": str(e)
-                },
-                "agent_type": "mock_react",
+                "agent_executor": None,
+                "agent_type": "mock",
                 "tool_count": len(tools),
-                "max_iterations": max_iterations
+                "max_iterations": max_iterations,
+                "error": f"Agent creation failed: {str(e)}"
             }
 
 @register_component
@@ -240,10 +254,10 @@ class AgentExecutorComponent(BaseLangChainComponent):
         
         self.inputs = [
             ComponentInput(
-                name="agent",
-                display_name="Agent",
-                field_type="agent",
-                description="Configured agent"
+                name="agent_executor",
+                display_name="Agent Executor",
+                field_type="agent_executor",
+                description="Configured agent executor"
             ),
             ComponentInput(
                 name="input_query",
@@ -273,61 +287,92 @@ class AgentExecutorComponent(BaseLangChainComponent):
                 name="response",
                 display_name="Agent Response",
                 field_type="str",
-                method="execute_agent",
-                description="Agent response"
+                method="execute_agent"
             ),
             ComponentOutput(
                 name="intermediate_steps",
                 display_name="Intermediate Steps",
                 field_type="list",
-                method="get_steps",
-                description="Reasoning steps"
+                method="get_steps"
+            ),
+            ComponentOutput(
+                name="execution_metadata",
+                display_name="Execution Metadata",
+                field_type="dict",
+                method="get_metadata"
             )
         ]
     
     async def execute(self, **kwargs) -> Dict[str, Any]:
-        agent = kwargs.get("agent")
+        agent_executor = kwargs.get("agent_executor")
         input_query = kwargs.get("input_query")
         chat_history = kwargs.get("chat_history", [])
         return_intermediate_steps = kwargs.get("return_intermediate_steps", True)
         
+        # Handle mock agents for demo
+        if agent_executor is None:
+            return {
+                "response": f"Mock response for query: {input_query}",
+                "intermediate_steps": [],
+                "execution_metadata": {
+                    "total_steps": 0,
+                    "input_length": len(input_query or ""),
+                    "output_length": 20,
+                    "success": True,
+                    "agent_type": "mock"
+                },
+                "input_query": input_query
+            }
+        
+        # Prepare input
+        agent_input = {
+            "input": input_query,
+            "chat_history": chat_history
+        }
+        
+        # Execute agent
         try:
-            # For now, return a mock response
-            response = f"Agent processed query: {input_query}"
+            result = await agent_executor.ainvoke(
+                agent_input,
+                return_only_outputs=False,
+                include_run_info=True
+            )
             
-            intermediate_steps = [
-                {
-                    "action": {
-                        "tool": "thinking",
-                        "tool_input": input_query,
-                        "log": f"Processing query: {input_query}"
-                    },
-                    "observation": "Query processed successfully"
-                }
-            ]
+            response = result.get("output", "")
+            intermediate_steps = result.get("intermediate_steps", [])
+            
+            # Format intermediate steps
+            formatted_steps = []
+            for step in intermediate_steps:
+                if isinstance(step, tuple) and len(step) == 2:
+                    action, observation = step
+                    formatted_steps.append({
+                        "action": {
+                            "tool": action.tool if hasattr(action, 'tool') else str(action),
+                            "tool_input": action.tool_input if hasattr(action, 'tool_input') else "",
+                            "log": action.log if hasattr(action, 'log') else ""
+                        },
+                        "observation": str(observation)
+                    })
             
             execution_metadata = {
-                "total_steps": len(intermediate_steps),
+                "total_steps": len(formatted_steps),
                 "input_length": len(input_query),
                 "output_length": len(response),
                 "success": True
             }
             
-            return {
-                "response": response,
-                "intermediate_steps": intermediate_steps,
-                "execution_metadata": execution_metadata,
-                "input_query": input_query
-            }
-            
         except Exception as e:
-            logger.error(f"Agent execution failed: {str(e)}")
-            return {
-                "response": f"Agent execution failed: {str(e)}",
-                "intermediate_steps": [],
-                "execution_metadata": {
-                    "error": str(e),
-                    "success": False
-                },
-                "input_query": input_query
+            response = f"Agent execution failed: {str(e)}"
+            formatted_steps = []
+            execution_metadata = {
+                "error": str(e),
+                "success": False
             }
+        
+        return {
+            "response": response,
+            "intermediate_steps": formatted_steps,
+            "execution_metadata": execution_metadata,
+            "input_query": input_query
+        }

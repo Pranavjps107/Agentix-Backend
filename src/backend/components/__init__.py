@@ -18,22 +18,7 @@ try:
     from . import tools
     from . import vectorstores
     from . import document_loaders
-    
-    # Import specific components to ensure they're registered
-    from .llms.base_llm import LLMComponent
-    from .llms.openai_llm import OpenAILLMComponent
-    from .llms.anthropic_llm import AnthropicLLMComponent
-    from .llms.fake_llm import FakeLLMComponent
-    
-    from .chat_models.base_chat import ChatModelComponent
-    from .embeddings.base_embeddings import EmbeddingsComponent
-    from .agents.agents import OpenAIFunctionsAgentComponent, ReActAgentComponent, AgentExecutorComponent
-    from .tools.tools import WebSearchToolComponent, CustomToolComponent
-    from .vectorstores.vectorstore import VectorStoreComponent, VectorStoreRetrieverComponent
-    from .document_loaders.loaders import TextLoaderComponent, PDFLoaderComponent, WebLoaderComponent
-    from .output_parsers.parsers import StringOutputParserComponent, JsonOutputParserComponent
-    from .prompts.prompt_templates import PromptTemplateComponent, ChatPromptTemplateComponent
-    
+    from . import inputs  # Add this new module
 except ImportError as e:
     import logging
     logging.warning(f"Failed to import some component modules: {e}")
@@ -51,5 +36,6 @@ __all__ = [
     "runnables",
     "tools",
     "vectorstores",
-    "document_loaders"
+    "document_loaders",
+    "inputs"  # Add this
 ]

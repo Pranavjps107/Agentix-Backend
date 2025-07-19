@@ -28,7 +28,7 @@ class ExecutionResult(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
     class Config:
-        json_json_json_schema_extra = {
+        schema_extra = {
             "example": {
                 "execution_id": "exec-123",
                 "status": "completed",
@@ -52,7 +52,7 @@ class TaskInfo(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
     
     class Config:
-        json_json_json_schema_extra = {
+        schema_extra = {
             "example": {
                 "task_id": "task-456",
                 "status": "running",
@@ -76,7 +76,7 @@ class ExecutionStep(BaseModel):
     end_time: Optional[datetime] = None
     
     class Config:
-        json_json_json_schema_extra = {
+        schema_extra = {
             "example": {
                 "step_id": "step-789",
                 "component_id": "node-1",
@@ -103,7 +103,7 @@ class ExecutionLog(BaseModel):
     user_id: Optional[str] = None
     
     class Config:
-        json_json_json_schema_extra = {
+        schema_extra = {
             "example": {
                 "execution_id": "exec-123",
                 "flow_id": "flow-1",
@@ -128,7 +128,7 @@ class PerformanceMetrics(BaseModel):
    last_updated: datetime = Field(default_factory=datetime.utcnow)
    
    class Config:
-       json_json_json_schema_extra = {
+       schema_extra = {
            "example": {
                "component_type": "OpenAI LLM",
                "average_execution_time": 2.5,

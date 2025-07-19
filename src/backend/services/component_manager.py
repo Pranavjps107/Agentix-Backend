@@ -24,20 +24,6 @@ class ComponentManager:
         self.execution_stats: Dict[str, ComponentStats] = {}
         self.cache_manager = CacheManager()
     
-    # ... rest of the class implementation stays the same
-logger = logging.getLogger(__name__)
-
-# Rest of your component_manager.py code stays the same...
-
-class ComponentManager:
-    """Manages component execution, caching, and monitoring"""
-    
-    def __init__(self):
-        self.execution_cache: Dict[str, Any] = {}
-        self.component_instances: Dict[str, Any] = {}
-        self.execution_stats: Dict[str, ComponentStats] = {}
-        self.cache_manager = CacheManager()
-    
     async def execute_component(
         self, 
         component_name: str, 

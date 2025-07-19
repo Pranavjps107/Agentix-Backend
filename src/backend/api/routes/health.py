@@ -1,9 +1,6 @@
 """
 Health Check Routes
 """
-"""
-Health Check Routes
-"""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Any
@@ -11,15 +8,12 @@ import time
 import psutil
 import logging
 
-# Fix the imports
 from ...core.registry import ComponentRegistry
 
 logger = logging.getLogger(__name__)
 
-# Rest of your health.py code stays the same...
 router = APIRouter(prefix="/api/v1/health", tags=["health"])
 
-# ... (keep the rest of your existing code)
 class HealthResponse(BaseModel):
     status: str
     timestamp: float

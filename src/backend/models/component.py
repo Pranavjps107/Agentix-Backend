@@ -14,7 +14,7 @@ class ComponentExecutionRequest(BaseModel):
     cache_result: bool = Field(default=True, description="Whether to cache the result")
     
     class Config:
-        json_json_json_schema_extra = {
+        schema_extra = {
             "example": {
                 "component_id": "llm-component-123",
                 "inputs": {
@@ -40,7 +40,7 @@ class ComponentResponse(BaseModel):
     cached: bool = False
     
     class Config:
-        json_json_json_schema_extra = {
+        schema_extra = {
             "example": {
                 "success": True,
                 "outputs": {

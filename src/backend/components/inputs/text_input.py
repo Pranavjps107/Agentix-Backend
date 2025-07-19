@@ -2,19 +2,20 @@
 Text Input Component
 """
 from typing import Dict, Any
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
+from ...core.registry import register_component
 
 @register_component
 class TextInputComponent(BaseLangChainComponent):
-    """Text Input Component for user input"""
+    """Text Input Component for workflow start"""
     
     def _setup_component(self):
         self.metadata = ComponentMetadata(
             display_name="Text Input",
-            description="Capture text input from user",
+            description="Start your workflow with user input",
             icon="📝",
             category="inputs",
-            tags=["input", "text", "user"],
+            tags=["input", "text", "start"],
             version="1.0.0"
         )
         
@@ -25,14 +26,22 @@ class TextInputComponent(BaseLangChainComponent):
                 field_type="str",
                 default="Enter text...",
                 required=False,
-                description="Placeholder text for input"
+                description="Placeholder text for input field"
             ),
             ComponentInput(
-                name="user_input",
-                display_name="User Input",
+                name="text",
+                display_name="Input Text",
                 field_type="str",
+                multiline=True,
+                description="The input text from user"
+            ),
+            ComponentInput(
+                name="required",
+                display_name="Required",
+                field_type="bool",
+                default=True,
                 required=False,
-                description="The actual user input"
+                description="Whether input is required"
             )
         ]
         
@@ -42,16 +51,28 @@ class TextInputComponent(BaseLangChainComponent):
                 display_name="Text Output",
                 field_type="str",
                 method="get_text",
-                description="The user input text"
+                description="The input text"
+            ),
+            ComponentOutput(
+                name="length",
+                display_name="Text Length",
+                field_type="int",
+                method="get_length",
+                description="Length of the input text"
             )
         ]
     
     async def execute(self, **kwargs) -> Dict[str, Any]:
-        user_input = kwargs.get("user_input", "")
+        text = kwargs.get("text", "")
         placeholder = kwargs.get("placeholder", "Enter text...")
+        required = kwargs.get("required", True)
+        
+        if required and not text.strip():
+            raise ValueError("Text input is required but was empty")
         
         return {
-            "text": user_input,
+            "text": text,
+            "length": len(text),
             "placeholder": placeholder,
-            "length": len(user_input)
+            "word_count": len(text.split()) if text else 0
         }

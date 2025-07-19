@@ -7,17 +7,14 @@ from typing import Dict, Any, List, Optional
 import logging
 import time
 
-# Fix the imports
 from ...core.registry import ComponentRegistry
 from ...services.component_manager import ComponentManager
 from ...models.component import ComponentExecutionRequest, ComponentResponse
 
 logger = logging.getLogger(__name__)
 
-# Rest of your components.py code stays the same...
 router = APIRouter(prefix="/api/v1/components", tags=["components"])
 
-# ... (keep the rest of your existing code)
 class ComponentListResponse(BaseModel):
     components: Dict[str, Any]
     categories: Dict[str, List[str]]

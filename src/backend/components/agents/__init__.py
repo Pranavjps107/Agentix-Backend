@@ -4,12 +4,12 @@ Agent Components
 
 from .agents import (
     OpenAIFunctionsAgentComponent,
-    ReActAgentComponent, 
+    ReActAgentComponent,
     AgentExecutorComponent
 )
 
 __all__ = [
     "OpenAIFunctionsAgentComponent",
-    "ReActAgentComponent",
+    "ReActAgentComponent", 
     "AgentExecutorComponent"
 ]

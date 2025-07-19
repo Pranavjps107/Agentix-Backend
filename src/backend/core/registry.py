@@ -1,7 +1,7 @@
 """
 Component registry for managing all available components
 """
-from typing import Dict, Type, List, Optional,Any
+from typing import Dict, Type, List, Optional, Any
 import logging
 from .base import BaseLangChainComponent
 from .exceptions import RegistrationException
@@ -38,6 +38,7 @@ class ComponentRegistry:
             logger.info(f"Registered component: {component_name} in category: {category}")
             
         except Exception as e:
+            logger.error(f"Failed to register component {component_class.__name__}: {str(e)}")
             raise RegistrationException(f"Failed to register component {component_class.__name__}: {str(e)}")
     
     @classmethod

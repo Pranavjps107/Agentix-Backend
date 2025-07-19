@@ -1,3 +1,4 @@
+# src/backend/core/base.py (Fixed version)
 """
 Base component system for LangChain Platform
 """
@@ -169,3 +170,10 @@ class BaseLangChainComponent(ABC):
             if out.name == name:
                 return out
         return None
+
+# Register component decorator - this must be imported from registry
+def register_component(component_class: Type[BaseLangChainComponent]):
+    """Decorator to auto-register components"""
+    from .registry import ComponentRegistry
+    ComponentRegistry.register(component_class)
+    return component_class
