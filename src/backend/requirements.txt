@@ -1,0 +1,63 @@
+# FastAPI and ASGI server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# LangChain Core and Community
+langchain-core==0.2.43
+langchain==0.2.17
+langchain-community==0.2.16
+
+# LangChain Integrations (Compatible Versions)
+langchain-openai==0.1.25
+langchain-anthropic==0.1.23
+langchain-mistralai==0.1.13
+langchain-cohere==0.2.4
+langchain-google-genai==1.0.10
+langchain-groq==0.1.9
+langchain-chroma==0.1.2
+
+# Vector Stores (Optional)
+chromadb==0.4.15
+pinecone-client==2.2.4
+qdrant-client==1.6.9
+
+# Document Loaders
+pypdf==3.17.1
+python-docx==1.1.0
+
+# Embeddings
+sentence-transformers==2.2.2
+
+# Tools and Utilities
+requests==2.31.0
+aiohttp==3.9.0
+beautifulsoup4==4.12.2
+
+# Database and Caching
+redis==5.0.1
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+
+# Monitoring and Logging
+prometheus-client==0.19.0
+
+# Development and Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Security
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.6
+passlib[bcrypt]==1.7.4
+
+# Environment and Configuration
+python-dotenv==1.0.0
+pyyaml==6.0.1
+
+# System Monitoring
+psutil==5.9.6
+
+# GROQ SDK (Updated to compatible version)
+groq>=0.4.1

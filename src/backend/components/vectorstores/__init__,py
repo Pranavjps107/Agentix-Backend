@@ -1,0 +1,53 @@
+# src/backend/components/vectorstores/__init__.py
+"""
+Vector Store Components
+"""
+
+try:
+    from .vectorstore import VectorStoreComponent, VectorStoreRetrieverComponent
+    from .chroma import ChromaVectorStoreComponent
+    from .pinecone import PineconeVectorStoreComponent
+except ImportError as e:
+    import logging
+    logging.warning(f"Some vectorstore components not available: {e}")
+    
+    # Create placeholder components
+    from ...core.base import BaseLangChainComponent, ComponentMetadata, ComponentInput, ComponentOutput
+    from ...core.registry import register_component
+    
+    @register_component
+    class VectorStoreComponent(BaseLangChainComponent):
+        def _setup_component(self):
+            self.metadata = ComponentMetadata(
+                display_name="Vector Store",
+                description="Vector store component (placeholder)",
+                icon="🗃️",
+                category="vectorstores",
+                tags=["vectors"]
+            )
+            self.inputs = []
+            self.outputs = []
+        
+        async def execute(self, **kwargs):
+            return {"message": "Vector store component not fully implemented"}
+    
+    @register_component
+    class VectorStoreRetrieverComponent(BaseLangChainComponent):
+        def _setup_component(self):
+            self.metadata = ComponentMetadata(
+                display_name="Vector Store Retriever",
+                description="Vector store retriever (placeholder)",
+                icon="🔍",
+                category="retrievers",
+                tags=["retrieval"]
+            )
+            self.inputs = []
+            self.outputs = []
+        
+        async def execute(self, **kwargs):
+            return {"message": "Vector store retriever not fully implemented"}
+
+__all__ = [
+    "VectorStoreComponent",
+    "VectorStoreRetrieverComponent"
+]
