@@ -2,7 +2,8 @@
 Text Input Component
 """
 from typing import Dict, Any
-from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
+from ...core.registry import register_component
 
 @register_component
 class TextInputComponent(BaseLangChainComponent):
@@ -11,21 +12,27 @@ class TextInputComponent(BaseLangChainComponent):
     def _setup_component(self):
         self.metadata = ComponentMetadata(
             display_name="Text Input",
-            description="Capture user text input",
+            description="Text input component for user interaction",
             icon="📝",
             category="inputs",
-            tags=["input", "text", "user"],
-            version="1.0.0"
+            tags=["input", "text", "user"]
         )
         
         self.inputs = [
             ComponentInput(
+                name="text",
+                display_name="Text",
+                field_type="str",
+                default="",
+                description="Input text"
+            ),
+            ComponentInput(
                 name="placeholder",
                 display_name="Placeholder",
                 field_type="str",
-                default="Enter text...",
+                default="Enter your question...",
                 required=False,
-                description="Placeholder text for the input field"
+                description="Placeholder text"
             ),
             ComponentInput(
                 name="required",
@@ -34,49 +41,35 @@ class TextInputComponent(BaseLangChainComponent):
                 default=True,
                 required=False,
                 description="Whether input is required"
-            ),
-            ComponentInput(
-                name="default_value",
-                display_name="Default Value",
-                field_type="str",
-                required=False,
-                description="Default value for the input"
-            ),
-            ComponentInput(
-                name="user_input",
-                display_name="User Input",
-                field_type="str",
-                required=False,
-                description="The actual user input text"
             )
         ]
         
         self.outputs = [
             ComponentOutput(
                 name="text",
-                display_name="Text Output",
+                display_name="Output Text",
                 field_type="str",
-                method="get_text",
-                description="The processed text output"
+                method="get_output",
+                description="The input text"
             )
         ]
     
     async def execute(self, **kwargs) -> Dict[str, Any]:
-        placeholder = kwargs.get("placeholder", "Enter text...")
+        text = kwargs.get("text", "")
+        placeholder = kwargs.get("placeholder", "Enter your question...")
         required = kwargs.get("required", True)
-        default_value = kwargs.get("default_value", "")
-        user_input = kwargs.get("user_input", "")
         
-        # Use user_input if provided, otherwise use default_value
-        text_output = user_input if user_input else default_value
-        
-        # Validate required input
-        if required and not text_output.strip():
-            text_output = "artificial intelligence latest developments"  # Default for testing
+        # Use data from node configuration if available
+        if "data" in kwargs:
+            data = kwargs["data"]
+            text = data.get("text", text)
+            placeholder = data.get("placeholder", placeholder)
+            required = data.get("required", required)
         
         return {
-            "text": text_output,
+            "text": text,
+            "length": len(text),
+            "word_count": len(text.split()) if text else 0,
             "placeholder": placeholder,
-            "required": required,
-            "length": len(text_output)
+            "required": required
         }

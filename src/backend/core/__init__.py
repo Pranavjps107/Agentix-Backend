@@ -1,41 +1,22 @@
+# src/backend/core/__init__.py
 """
-LangChain Components Package
-Contains all component implementations organized by category
+Core Components Package
+Contains base classes and utilities
 """
 
-# Import all component modules to ensure registration
-try:
-    from . import agents      # 🆕 Make sure this line exists
-    from . import callbacks  
-    from . import chat_models
-    from . import embeddings
-    from . import llms
-    from . import memory
-    from . import output_parsers
-    from . import prompts
-    from . import retrievers
-    from . import runnables
-    from . import tools
-    from . import vectorstores
-    from . import document_loaders
-    from . import inputs
-except ImportError as e:
-    import logging
-    logging.warning(f"Failed to import some component modules: {e}")
+# Import base classes and utilities only - no component modules
+from .base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
+from .registry import ComponentRegistry, register_component
+from .exceptions import ComponentException, ExecutionException, ValidationException
 
 __all__ = [
-    "agents",      # 🆕 Make sure this is included
-    "callbacks", 
-    "chat_models",
-    "embeddings",
-    "llms",
-    "memory",
-    "output_parsers",
-    "prompts",
-    "retrievers",
-    "runnables",
-    "tools",
-    "vectorstores",
-    "document_loaders",
-    "inputs"
+    "BaseLangChainComponent",
+    "ComponentInput", 
+    "ComponentOutput",
+    "ComponentMetadata",
+    "ComponentRegistry",
+    "register_component",
+    "ComponentException",
+    "ExecutionException", 
+    "ValidationException"
 ]

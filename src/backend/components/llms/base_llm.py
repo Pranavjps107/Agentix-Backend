@@ -4,7 +4,11 @@ Base LLM Component Implementation
 import asyncio
 from typing import Dict, Any, Optional
 from langchain_core.language_models.llms import BaseLLM
+
+# FROM:
 from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata, register_component
+
+# TO:
 from ...core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
 from ...core.registry import register_component
 @register_component
