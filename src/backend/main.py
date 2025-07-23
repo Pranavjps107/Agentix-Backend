@@ -135,9 +135,15 @@ def register_all_components_production():
                 ]
                 self.outputs = [
                     ComponentOutput(name="text_output", display_name="Text Output", field_type="str", description="Processed user input"),
-                    ComponentOutput(name="character_count", display_name="Character Count", field_type="int", description="Number of characters"),
-                    ComponentOutput(name="word_count", display_name="Word Count", field_type="int", description="Number of words"),
-                    ComponentOutput(name="is_valid", display_name="Is Valid", field_type="bool", description="Whether input passes validation")
+                    # Line ~138 - Text Input
+                    ComponentOutput(name="character_count", display_name="Character Count", field_type="int", method="get_character_count", description="Number of characters"),
+
+                    # Line ~139 - Text Input  
+                    ComponentOutput(name="word_count", display_name="Word Count", field_type="int", method="get_word_count", description="Number of words"),
+
+                    # Line ~140 - Text Input
+                    ComponentOutput(name="is_valid", display_name="Is Valid", field_type="bool", method="get_is_valid", description="Whether input passes validation"),
+
                 ]
             
             async def execute(self, **kwargs):
@@ -238,9 +244,10 @@ def register_all_components_production():
                                  default=False, description="Enable streaming response")
                 ]
                 self.outputs = [
-                    ComponentOutput(name="response", display_name="Response", field_type="str"),
-                    ComponentOutput(name="usage", display_name="Token Usage", field_type="dict"),
-                    ComponentOutput(name="conversation_history", display_name="Updated Conversation", field_type="list"),
+                    # Chat Model outputs (~250+)
+                    ComponentOutput(name="response", display_name="Response", field_type="str", method="get_response", description="AI response"),
+                    ComponentOutput(name="usage", display_name="Token Usage", field_type="dict", method="get_usage", description="Token usage statistics"),
+                    ComponentOutput(name="conversation_history", display_name="Updated Conversation", field_type="list", method="get_conversation_history", description="Updated conversation"),
                     ComponentOutput(name="reasoning_content", display_name="Reasoning (Groq)", field_type="str"),
                     ComponentOutput(name="performance_metrics", display_name="Performance Metrics", field_type="dict")
                 ]
