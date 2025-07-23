@@ -135,15 +135,9 @@ def register_all_components_production():
                 ]
                 self.outputs = [
                     ComponentOutput(name="text_output", display_name="Text Output", field_type="str", description="Processed user input"),
-                    # Line ~138 - Text Input
                     ComponentOutput(name="character_count", display_name="Character Count", field_type="int", method="get_character_count", description="Number of characters"),
-
-                    # Line ~139 - Text Input  
                     ComponentOutput(name="word_count", display_name="Word Count", field_type="int", method="get_word_count", description="Number of words"),
-
-                    # Line ~140 - Text Input
                     ComponentOutput(name="is_valid", display_name="Is Valid", field_type="bool", method="get_is_valid", description="Whether input passes validation"),
-
                 ]
             
             async def execute(self, **kwargs):
@@ -167,6 +161,77 @@ def register_all_components_production():
                     "word_count": len(text.split()),
                     "is_valid": is_valid,
                     "metadata": {"processed_at": datetime.utcnow().isoformat()}
+                }
+
+        # ===== ADD THIS SIMPLE LLM COMPONENT =====
+        @register_component 
+        class SimpleLLMComponent(BaseLangChainComponent):
+            """Simple LLM Component for basic text generation"""
+            
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Simple LLM",
+                    description="Basic LLM component for text generation",
+                    icon="🤖",
+                    category="language_models",
+                    tags=["llm", "simple", "generation"]
+                )
+                
+                self.inputs = [
+                    ComponentInput(
+                        name="prompt",
+                        display_name="Prompt",
+                        field_type="str",
+                        description="Input prompt for the LLM"
+                    ),
+                    ComponentInput(
+                        name="model",
+                        display_name="Model",
+                        field_type="str",
+                        default="fake",
+                        options=["fake", "openai", "anthropic"],
+                        required=False,
+                        description="Model type to use"
+                    ),
+                    ComponentInput(
+                        name="temperature",
+                        display_name="Temperature",
+                        field_type="float",
+                        default=0.7,
+                        required=False,
+                        description="Sampling temperature"
+                    )
+                ]
+                
+                self.outputs = [
+                    ComponentOutput(
+                        name="response",
+                        display_name="Response",
+                        field_type="str",
+                        method="generate_response",
+                        description="Generated response"
+                    )
+                ]
+            
+            async def execute(self, **kwargs):
+                prompt = kwargs.get("prompt", "")
+                model = kwargs.get("model", "fake")
+                temperature = kwargs.get("temperature", 0.7)
+                
+                if not prompt.strip():
+                    return {
+                        "response": "Error: Empty prompt provided",
+                        "success": False
+                    }
+                
+                # Simple fake response
+                response = f"Simple LLM Response to: '{prompt[:50]}...' (Temperature: {temperature})"
+                
+                return {
+                    "response": response,
+                    "model_used": model,
+                    "temperature": temperature,
+                    "success": True
                 }
         
         @register_component

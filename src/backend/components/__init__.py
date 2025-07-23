@@ -18,6 +18,7 @@ try:
     from . import tools
     from . import vectorstores
     from . import document_loaders
+    from . import simple_components  # ADD THIS LINE
 except ImportError as e:
     import logging
     logging.warning(f"Failed to import some component modules: {e}")
@@ -35,5 +36,6 @@ __all__ = [
     "runnables",
     "tools",
     "vectorstores",
-    "document_loaders"
+    "document_loaders",
+    "simple_components"  # ADD THIS LINE
 ]
