@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>🧠 Agentix AI Platform</title>
+   <style>
+       body { 
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           margin: 0; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+           color: white; min-height: 100vh;
+       }
+       .container { max-width: 1200px; margin: 0 auto; text-align: center; }
+       .header { margin-bottom: 50px; }
+       .header h1 { font-size: 3em; margin-bottom: 10px; }
+       .header p { font-size: 1.2em; opacity: 0.9; }
+       .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin: 50px 0; }
+       .feature { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px); }
+       .links { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+       .link { 
+           padding: 15px 30px; background: rgba(255,255,255,0.2); color: white; 
+           text-decoration: none; border-radius: 10px; transition: all 0.3s;
+           border: 1px solid rgba(255,255,255,0.3);
+       }
+       .link:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+       .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 40px 0; }
+       .stat { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; }
+       .stat-number { font-size: 2em; font-weight: bold; color: #00ff88; }
+   </style>
+</head>
+<body>
+   <div class="container">
+       <div class="header">
+           <h1>🧠 Agentix Ultimate AI Platform</h1>
+           <p>Build sophisticated AI workflows with 60+ components across 14 categories</p>
+       </div>
+       
+       <div class="stats">
+           <div class="stat">
+               <div class="stat-number">60+</div>
+               <div>Components</div>
+           </div>
+           <div class="stat">
+               <div class="stat-number">14</div>
+               <div>Categories</div>
+           </div>
+           <div class="stat">
+               <div class="stat-number">∞</div>
+               <div>Possibilities</div>
+           </div>
+       </div>
+       
+       <div class="features">
+           <div class="feature">
+               <h3>⚡ Real-time Execution</h3>
+               <p>Execute AI workflows in real-time with WebSocket support for live updates</p>
+           </div>
+           <div class="feature">
+               <h3>🚀 Groq Integration</h3>
+               <p>Ultra-fast LLM processing with Groq's optimized inference engine</p>
+           </div>
+           <div class="feature">
+               <h3>🔧 60+ Components</h3>
+               <p>Everything you need: LLMs, tools, agents, memory, parsers, and more</p>
+           </div>
+           <div class="feature">
+               <h3>🌐 Multi-Provider</h3>
+               <p>Support for OpenAI, Anthropic, Groq, HuggingFace, and more</p>
+           </div>
+       </div>
+       
+       <div class="links">
+           <a href="/docs" class="link">📚 API Documentation</a>
+           <a href="/api/v1/components/" class="link">🔧 Components API</a>
+           <a href="/health" class="link">💚 Health Check</a>
+           <a href="/metrics" class="link">📊 Metrics</a>
+           <a href="/info" class="link">ℹ️ Platform Info</a>
+       </div>
+   </div>
+   
+   <script>
+       // Simple WebSocket demo
+       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+       const wsUrl = `${protocol}//${window.location.host}/ws/flows/demo`;
+       
+       try {
+           const ws = new WebSocket(wsUrl);
+           ws.onopen = () => console.log('🔌 WebSocket connected');
+           ws.onmessage = (event) => console.log('📨 Received:', JSON.parse(event.data));
+           ws.onerror = (error) => console.log('❌ WebSocket error:', error);
+       } catch (e) {
+           console.log('WebSocket not available');
+       }
+   </script>
+</body>
+</html>
