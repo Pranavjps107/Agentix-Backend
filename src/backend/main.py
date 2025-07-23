@@ -41,7 +41,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
 def register_components_manually():
     """Manually register components using absolute imports and inline definitions"""
     try:
@@ -167,6 +166,154 @@ def register_components_manually():
                 }
         
         logger.info("LLM Model component created and registered")
+        
+        # Create Chat Model Component inline  
+        @register_component
+        class ChatModelComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Chat Model",
+                    description="Chat-based Language Model for conversational AI",
+                    icon="💬",
+                    category="chat_models",
+                    tags=["chat", "conversation", "llm", "ai"]
+                )
+                self.inputs = [
+                    ComponentInput(
+                        name="messages",
+                        display_name="Messages",
+                        field_type="str",
+                        multiline=True,
+                        description="Input messages or prompt for the chat model"
+                    ),
+                    ComponentInput(
+                        name="provider",
+                        display_name="Provider",
+                        field_type="str",
+                        options=["fake", "openai", "anthropic", "groq"],
+                        default="fake",
+                        description="Chat model provider to use"
+                    ),
+                    ComponentInput(
+                        name="model",
+                        display_name="Model",
+                        field_type="str",
+                        default="gpt-3.5-turbo",
+                        description="Specific model name (e.g., gpt-4, claude-3-sonnet, llama-3.1-70b-versatile)"
+                    ),
+                    ComponentInput(
+                        name="temperature",
+                        display_name="Temperature",
+                        field_type="float",
+                        default=0.7,
+                        description="Controls randomness (0.0-1.0)"
+                    ),
+                    ComponentInput(
+                        name="max_tokens",
+                        display_name="Max Tokens",
+                        field_type="int",
+                        default=1000,
+                        description="Maximum tokens in response"
+                    ),
+                    ComponentInput(
+                        name="system_message",
+                        display_name="System Message",
+                        field_type="str",
+                        multiline=True,
+                        required=False,
+                        description="System prompt to guide the model's behavior"
+                    )
+                ]
+                self.outputs = [
+                    ComponentOutput(
+                        name="response",
+                        display_name="Chat Response",
+                        field_type="str",
+                        method="generate_response",
+                        description="The generated chat response"
+                    ),
+                    ComponentOutput(
+                        name="usage",
+                        display_name="Token Usage",
+                        field_type="dict",
+                        method="get_usage",
+                        description="Token usage statistics"
+                    )
+                ]
+            
+            async def execute(self, **kwargs):
+                messages = kwargs.get("messages", "")
+                provider = kwargs.get("provider", "fake")
+                model = kwargs.get("model", "gpt-3.5-turbo")
+                temperature = kwargs.get("temperature", 0.7)
+                max_tokens = kwargs.get("max_tokens", 1000)
+                system_message = kwargs.get("system_message", "")
+                
+                if not messages:
+                    return {"response": "No messages provided", "error": "Empty messages"}
+                
+                # Simulate different responses based on system message
+                if "news analyst" in system_message.lower():
+                    # For news analysis, return structured JSON
+                    fake_response = {
+                        "topic": "artificial intelligence",
+                        "sentiment": "positive",
+                        "sentiment_score": 0.78,
+                        "key_insights": [
+                            "AI adoption is accelerating across industries",
+                            "New breakthrough in machine learning efficiency",
+                            "Regulatory frameworks are being developed"
+                        ],
+                        "main_themes": ["innovation", "regulation", "adoption"],
+                        "urgency_level": "medium",
+                        "summary": "Recent AI developments show positive trends with continued innovation and growing adoption across various sectors.",
+                        "trending_keywords": ["AI", "machine learning", "automation"],
+                        "geographical_focus": ["United States", "China", "Europe"],
+                        "time_relevance": "recent",
+                        "credibility_assessment": "high",
+                        "potential_impact": "Significant transformation expected in multiple industries over the next 2-3 years"
+                    }
+                    import json
+                    response_text = json.dumps(fake_response, indent=2)
+                elif "friendly ai assistant" in system_message.lower():
+                    # For insight generation, return friendly explanation
+                    response_text = """Based on the news analysis, here's what's happening with artificial intelligence:
+
+🎯 **Key Takeaway**: The AI landscape is looking quite positive right now! There's a lot of exciting innovation happening.
+
+📈 **Sentiment Analysis**: The overall mood around AI is positive (78% positive sentiment), which suggests that people are generally optimistic about AI developments rather than fearful.
+
+💡 **Most Important Insights**:
+- AI is being adopted much faster across different industries than expected
+- There's been a significant breakthrough in making machine learning more efficient
+- Governments are starting to create proper rules and guidelines for AI use
+
+⚡ **Urgency Level**: Medium - This isn't breaking news that requires immediate action, but these are important ongoing developments worth following.
+
+🌍 **Global Impact**: The changes are happening primarily in the US, China, and Europe, but the effects will likely spread worldwide as AI becomes more mainstream.
+
+This is an exciting time for AI - we're seeing both technological progress and responsible development of governance frameworks!"""
+                else:
+                    # Generic chat response
+                    response_text = f"This is a simulated chat response to: '{messages}' (provider: {provider}, model: {model}, temp: {temperature})"
+                
+                # Simulate token usage
+                usage = {
+                    "prompt_tokens": len(str(messages).split()) + len(str(system_message).split()),
+                    "completion_tokens": len(response_text.split()),
+                    "total_tokens": len(str(messages).split()) + len(str(system_message).split()) + len(response_text.split())
+                }
+                
+                return {
+                    "response": response_text,
+                    "usage": usage,
+                    "provider": provider,
+                    "model": model,
+                    "temperature": temperature,
+                    "max_tokens": max_tokens
+                }
+        
+        logger.info("Chat Model component created and registered")
         
         # Create String Output Parser Component inline
         @register_component
@@ -303,10 +450,17 @@ def register_components_manually():
                 ]
                 self.outputs = [
                     ComponentOutput(
-                        name="results",
+                        name="search_results",
                         display_name="Search Results",
-                        field_type="list",
+                        field_type="str",
                         method="search",
+                        description="Formatted search results as text"
+                    ),
+                    ComponentOutput(
+                        name="results",
+                        display_name="Raw Results",
+                        field_type="list",
+                        method="get_raw_results",
                         description="List of search results"
                     )
                 ]
@@ -316,22 +470,65 @@ def register_components_manually():
                 num_results = kwargs.get("num_results", 5)
                 
                 if not query:
-                    return {"results": [], "error": "No search query provided"}
+                    return {"search_results": "No search query provided", "results": [], "error": "No search query provided"}
                 
-                # Simulate search results
+                # Simulate search results based on the query
                 fake_results = []
-                for i in range(min(num_results, 5)):
-                    fake_results.append({
-                        "title": f"Search Result {i+1} for '{query}'",
-                        "url": f"https://example.com/result-{i+1}",
-                        "snippet": f"This is a simulated search result snippet for query: {query}",
-                        "rank": i + 1
-                    })
+                if "artificial intelligence" in query.lower() or "ai" in query.lower():
+                    fake_results = [
+                        {
+                            "title": "Major AI Breakthrough: New Neural Network Architecture Achieves 40% Efficiency Gain",
+                            "url": "https://tech-news.com/ai-breakthrough-2025",
+                            "snippet": "Researchers at leading tech companies have developed a revolutionary neural network architecture that significantly reduces computational requirements while maintaining accuracy.",
+                            "rank": 1
+                        },
+                        {
+                            "title": "AI Adoption Surges Across Healthcare Industry, Improving Patient Outcomes",
+                            "url": "https://health-tech.com/ai-healthcare-adoption",
+                            "snippet": "Healthcare providers are increasingly integrating AI systems for diagnosis, treatment planning, and patient monitoring, leading to improved outcomes and reduced costs.",
+                            "rank": 2
+                        },
+                        {
+                            "title": "New AI Regulation Framework Proposed by Global Tech Leaders",
+                            "url": "https://policy-watch.com/ai-regulation-framework",
+                            "snippet": "A comprehensive framework for AI governance has been proposed, focusing on transparency, accountability, and ethical AI development practices.",
+                            "rank": 3
+                        },
+                        {
+                            "title": "AI-Powered Automation Transforms Manufacturing Sector",
+                            "url": "https://industry-news.com/ai-manufacturing",
+                            "snippet": "Manufacturing companies are leveraging AI-driven automation to optimize production processes, reduce waste, and improve quality control.",
+                            "rank": 4
+                        },
+                        {
+                            "title": "Investment in AI Startups Reaches Record High in 2025",
+                            "url": "https://finance-today.com/ai-startup-investment",
+                            "snippet": "Venture capital funding for AI startups has reached unprecedented levels, with particular focus on enterprise AI solutions and ethical AI development.",
+                            "rank": 5
+                        }
+                    ]
+                else:
+                    # Generic results for other queries
+                    for i in range(min(num_results, 5)):
+                        fake_results.append({
+                            "title": f"Search Result {i+1} for '{query}'",
+                            "url": f"https://example.com/result-{i+1}",
+                            "snippet": f"This is a simulated search result snippet for query: {query}",
+                            "rank": i + 1
+                        })
+                
+                # Format results as text for the search_results output
+                formatted_results = f"Search results for '{query}':\n\n"
+                for result in fake_results[:num_results]:
+                    formatted_results += f"{result['rank']}. {result['title']}\n"
+                    formatted_results += f"   URL: {result['url']}\n"
+                    formatted_results += f"   {result['snippet']}\n\n"
                 
                 return {
-                    "results": fake_results,
+                    "search_results": formatted_results,
+                    "results": fake_results[:num_results],
                     "query": query,
-                    "total_results": len(fake_results)
+                    "total_results": len(fake_results[:num_results])
                 }
         
         logger.info("Web Search Tool component created and registered")
