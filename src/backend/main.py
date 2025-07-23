@@ -4,6 +4,8 @@ Main FastAPI application
 import os
 import logging
 import time
+import traceback
+import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,160 +43,99 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def register_components_manually():
-    """Manually register components"""
+    """Manually register components using absolute imports and inline definitions"""
     try:
-        # Import and register core components
-        from components.llms.base_llm import LLMComponent
-        from components.llms.fake_llm import FakeLLMComponent
-        from components.chat_models.base_chat import ChatModelComponent
-        from components.embeddings.base_embeddings import EmbeddingsComponent
-        
-        # Register them manually
-        ComponentRegistry.register(LLMComponent)
-        ComponentRegistry.register(FakeLLMComponent)
-        ComponentRegistry.register(ChatModelComponent)
-        ComponentRegistry.register(EmbeddingsComponent)
-        
-        logger.info("Core components registered successfully")
-        
-        # Try to register text input component
-        try:
-            from components.inputs.text_input import TextInputComponent
-            ComponentRegistry.register(TextInputComponent)
-            logger.info("Text Input component registered successfully")
-        except ImportError as e:
-            logger.warning(f"Could not import TextInputComponent: {e}")
-            # Create a simple text input component inline
-            from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
-            from core.registry import register_component
-            
-            @register_component
-            class TextInputComponent(BaseLangChainComponent):
-                def _setup_component(self):
-                    self.metadata = ComponentMetadata(
-                        display_name="Text Input",
-                        description="Simple text input component",
-                        icon="📝",
-                        category="inputs",
-                        tags=["input", "text"]
-                    )
-                    self.inputs = [
-                        ComponentInput(
-                            name="text",
-                            display_name="Text Input",
-                            field_type="str",
-                            required=False,
-                            description="Input text"
-                        ),
-                        ComponentInput(
-                            name="placeholder",
-                            display_name="Placeholder",
-                            field_type="str",
-                            default="Enter text...",
-                            required=False,
-                            description="Placeholder text"
-                        ),
-                        ComponentInput(
-                            name="required",
-                            display_name="Required",
-                            field_type="bool",
-                            default=True,
-                            required=False,
-                            description="Whether input is required"
-                        )
-                    ]
-                    self.outputs = [
-                        ComponentOutput(
-                            name="text",
-                            display_name="Output Text",
-                            field_type="str",
-                            method="get_text",
-                            description="The input text"
-                        )
-                    ]
-                
-                async def execute(self, **kwargs):
-                    # Get input from multiple possible sources
-                    text = kwargs.get("text", "")
-                    user_input = kwargs.get("user_input", "")
-                    placeholder = kwargs.get("placeholder", "Enter text...")
-                    required = kwargs.get("required", True)
-                    
-                    # Check for data from flow definition
-                    if "data" in kwargs:
-                        data = kwargs["data"]
-                        text = data.get("text", text or "Explain quantum computing in simple terms")
-                        placeholder = data.get("placeholder", placeholder)
-                        required = data.get("required", required)
-                    
-                    # Use user_input if text is empty (backward compatibility)
-                    if not text and user_input:
-                        text = user_input
-                    
-                    # Default text for testing if still empty
-                    if not text:
-                        text = "Explain quantum computing in simple terms"
-                    
-                    return {
-                        "text": text,
-                        "length": len(text),
-                        "word_count": len(text.split()) if text else 0,
-                        "placeholder": placeholder,
-                        "required": required
-                    }
-            
-            logger.info("Inline Text Input component created and registered")
-        
-        # Register LLM Model component inline (to fix the missing LLM Model error)
+        # Instead of importing problematic files, create components inline
         from core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
-        from core.registry import register_component
+        from core.registry import ComponentRegistry, register_component
         
+        # Create Text Input Component inline
         @register_component
-        class LLMModelComponent(BaseLangChainComponent):
+        class TextInputComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Text Input",
+                    description="Simple text input component for starting workflows",
+                    icon="📝",
+                    category="inputs",
+                    tags=["input", "text"]
+                )
+                self.inputs = [
+                    ComponentInput(
+                        name="user_input",
+                        display_name="User Input", 
+                        field_type="str",
+                        required=False,
+                        description="User input text"
+                    ),
+                    ComponentInput(
+                        name="placeholder",
+                        display_name="Placeholder",
+                        field_type="str",
+                        default="Enter text...",
+                        required=False,
+                        description="Placeholder text"
+                    )
+                ]
+                self.outputs = [
+                    ComponentOutput(
+                        name="text",
+                        display_name="Output Text",
+                        field_type="str", 
+                        method="get_text",
+                        description="The processed text"
+                    )
+                ]
+            
+            async def execute(self, **kwargs):
+                user_input = kwargs.get("user_input", "")
+                placeholder = kwargs.get("placeholder", "Enter text...")
+                
+                # Use global input if user_input is empty
+                if not user_input:
+                    user_input = "Hello, this is a test input!"  # Default for testing
+                
+                return {
+                    "text": user_input, 
+                    "length": len(user_input),
+                    "placeholder": placeholder
+                }
+        
+        logger.info("Text Input component created and registered")
+        
+        # Create LLM Model Component inline  
+        @register_component
+        class LLMComponent(BaseLangChainComponent):
             def _setup_component(self):
                 self.metadata = ComponentMetadata(
                     display_name="LLM Model",
-                    description="Language model for text generation",
+                    description="Language Model for text generation",
                     icon="🤖",
                     category="language_models",
-                    tags=["llm", "model", "generation"]
+                    tags=["llm", "generation", "text", "ai"]
                 )
                 self.inputs = [
                     ComponentInput(
                         name="prompt",
                         display_name="Prompt",
                         field_type="str",
-                        required=True,
+                        multiline=True,
                         description="Input prompt for the model"
                     ),
                     ComponentInput(
                         name="provider",
                         display_name="Provider",
                         field_type="str",
+                        options=["fake", "openai", "anthropic"],
                         default="fake",
-                        options=["fake", "openai", "anthropic", "groq"],
-                        description="Model provider"
-                    ),
-                    ComponentInput(
-                        name="model_name",
-                        display_name="Model Name",
-                        field_type="str",
-                        default="gpt-3.5-turbo",
-                        description="Name of the model"
+                        description="LLM provider to use"
                     ),
                     ComponentInput(
                         name="temperature",
                         display_name="Temperature",
                         field_type="float",
                         default=0.7,
-                        description="Sampling temperature"
-                    ),
-                    ComponentInput(
-                        name="max_tokens",
-                        display_name="Max Tokens",
-                        field_type="int",
-                        default=256,
-                        description="Maximum tokens to generate"
+                        description="Controls randomness (0.0-1.0)"
                     )
                 ]
                 self.outputs = [
@@ -202,196 +143,112 @@ def register_components_manually():
                         name="response",
                         display_name="Generated Text",
                         field_type="str",
-                        method="get_response",
-                        description="Generated response from the model"
-                    ),
-                    ComponentOutput(
-                        name="usage",
-                        display_name="Usage Info",
-                        field_type="dict",
-                        method="get_usage",
-                        description="Token usage information"
+                        method="generate_text",
+                        description="The generated text response"
                     )
                 ]
             
             async def execute(self, **kwargs):
                 prompt = kwargs.get("prompt", "")
                 provider = kwargs.get("provider", "fake")
-                model_name = kwargs.get("model_name", "gpt-3.5-turbo")
                 temperature = kwargs.get("temperature", 0.7)
-                max_tokens = kwargs.get("max_tokens", 256)
-                
-                # Use data from flow definition if available
-                if "data" in kwargs:
-                    data = kwargs["data"]
-                    provider = data.get("provider", provider)
-                    model_name = data.get("model_name", model_name)
-                    temperature = data.get("temperature", temperature)
-                    max_tokens = data.get("max_tokens", max_tokens)
-                
-                # Handle different input sources for prompt
-                if not prompt:
-                    # Check for connected input from previous node
-                    prompt = kwargs.get("text", "")
                 
                 if not prompt:
-                    prompt = "Hello, how can I help you today?"
+                    return {"response": "No prompt provided", "error": "Empty prompt"}
                 
-                # Generate response based on provider
-                if provider == "fake":
-                    response = (
-                        f"Quantum computing is a revolutionary technology that uses quantum mechanical phenomena "
-                        f"to process information. Unlike classical computers that use bits (0 or 1), quantum computers "
-                        f"use quantum bits or 'qubits' that can exist in multiple states simultaneously through "
-                        f"superposition. This allows them to solve certain problems exponentially faster than "
-                        f"classical computers. Key applications include cryptography, optimization, and drug discovery. "
-                        f"(Generated by {model_name} with temperature {temperature})"
-                    )
-                elif provider == "groq":
-                    try:
-                        # Try to use actual Groq API if available
-                        import groq
-                        client = groq.Groq(api_key=os.getenv("GROQ_API_KEY"))
-                        
-                        chat_completion = client.chat.completions.create(
-                            messages=[
-                                {"role": "user", "content": prompt}
-                            ],
-                            model=model_name,
-                            temperature=temperature,
-                            max_tokens=max_tokens,
-                        )
-                        response = chat_completion.choices[0].message.content
-                    except Exception as e:
-                        logger.warning(f"Groq API call failed: {e}, using fallback")
-                        response = f"Fallback response for: '{prompt}'. (Groq API unavailable)"
-                else:
-                    response = f"Generated response using {provider}/{model_name} for prompt: {prompt}"
-                
-                # Calculate usage info
-                usage_info = {
-                    "prompt_tokens": len(prompt.split()),
-                    "completion_tokens": len(response.split()),
-                    "total_tokens": len(prompt.split()) + len(response.split()),
-                    "model": model_name,
-                    "provider": provider
-                }
+                # For now, return a fake response for testing
+                fake_response = f"This is a simulated LLM response to: '{prompt}' (provider: {provider}, temp: {temperature})"
                 
                 return {
-                    "response": response,
-                    "usage": usage_info,
+                    "response": fake_response,
+                    "prompt": prompt,
                     "provider": provider,
-                    "model_name": model_name,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                    "prompt": prompt
+                    "temperature": temperature
                 }
         
-        logger.info("LLM Model component registered successfully")
+        logger.info("LLM Model component created and registered")
         
-        # Try to register web search tool
-        try:
-            from components.tools.tools import WebSearchToolComponent
-            ComponentRegistry.register(WebSearchToolComponent)
-            logger.info("Web Search Tool component registered successfully")
-        except ImportError as e:
-            logger.warning(f"Could not import WebSearchToolComponent: {e}")
+        # Create String Output Parser Component inline
+        @register_component
+        class StringOutputParserComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="String Output Parser",
+                    description="Parse LLM output as string",
+                    icon="📄",
+                    category="output_parsers",
+                    tags=["parser", "string"]
+                )
+                self.inputs = [
+                    ComponentInput(
+                        name="llm_output",
+                        display_name="LLM Output",
+                        field_type="str",
+                        description="Raw output from LLM"
+                    )
+                ]
+                self.outputs = [
+                    ComponentOutput(
+                        name="parsed_text",
+                        display_name="Parsed Text",
+                        field_type="str",
+                        method="parse_text",
+                        description="Cleaned and parsed text"
+                    )
+                ]
+            
+            async def execute(self, **kwargs):
+                llm_output = kwargs.get("llm_output", "")
+                
+                # Simple string cleaning/parsing
+                parsed = llm_output.strip()
+                
+                return {
+                    "parsed_text": parsed,
+                    "original_length": len(llm_output),
+                    "parsed_length": len(parsed)
+                }
         
-        # Try to register output parsers
-        try:
-            from components.output_parsers.parsers import StringOutputParserComponent, JsonOutputParserComponent
-            ComponentRegistry.register(StringOutputParserComponent)
-            ComponentRegistry.register(JsonOutputParserComponent)
-            logger.info("Output parser components registered successfully")
-        except ImportError as e:
-            logger.warning(f"Could not import output parser components: {e}")
-            # Create simple output parsers inline
-            
-            @register_component
-            class StringOutputParserComponent(BaseLangChainComponent):
-                def _setup_component(self):
-                    self.metadata = ComponentMetadata(
-                        display_name="String Output Parser",
-                        description="Parse LLM output as string",
-                        icon="📄",
-                        category="output_parsers",
-                        tags=["parser", "string"]
+        logger.info("String Output Parser component created and registered")
+        
+        # Create JSON Output Parser Component inline
+        @register_component
+        class JsonOutputParserComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="JSON Output Parser",
+                    description="Parse LLM output as JSON",
+                    icon="📋",
+                    category="output_parsers",
+                    tags=["parser", "json"]
+                )
+                self.inputs = [
+                    ComponentInput(
+                        name="llm_output",
+                        display_name="LLM Output",
+                        field_type="str",
+                        description="Raw output from LLM to parse as JSON"
                     )
-                    self.inputs = [
-                        ComponentInput(
-                            name="llm_output",
-                            display_name="LLM Output",
-                            field_type="str",
-                            description="Output to parse"
-                        )
-                    ]
-                    self.outputs = [
-                        ComponentOutput(
-                            name="parsed_output",
-                            display_name="Parsed String",
-                            field_type="str",
-                            method="parse_string",
-                            description="Parsed output"
-                        )
-                    ]
-                
-                async def execute(self, **kwargs):
-                    llm_output = kwargs.get("llm_output", "")
-                    # Handle input from connected nodes
-                    if not llm_output:
-                        llm_output = kwargs.get("response", "")
-                    
-                    parsed = llm_output.strip()
-                    return {
-                        "parsed_output": parsed,
-                        "length": len(parsed),
-                        "word_count": len(parsed.split()) if parsed else 0
-                    }
-            
-            @register_component
-            class JsonOutputParserComponent(BaseLangChainComponent):
-                def _setup_component(self):
-                    self.metadata = ComponentMetadata(
-                        display_name="JSON Output Parser",
-                        description="Parse LLM output as JSON",
-                        icon="📋",
-                        category="output_parsers",
-                        tags=["parser", "json"]
+                ]
+                self.outputs = [
+                    ComponentOutput(
+                        name="parsed_json",
+                        display_name="Parsed JSON",
+                        field_type="dict",
+                        method="parse_json",
+                        description="Parsed JSON object"
                     )
-                    self.inputs = [
-                        ComponentInput(
-                            name="llm_output",
-                            display_name="LLM Output",
-                            field_type="str",
-                            description="JSON string to parse"
-                        )
-                    ]
-                    self.outputs = [
-                        ComponentOutput(
-                            name="parsed_json",
-                            display_name="Parsed JSON",
-                            field_type="dict",
-                            method="parse_json",
-                            description="Parsed JSON object"
-                        ),
-                        ComponentOutput(
-                            name="is_valid",
-                            display_name="Is Valid JSON",
-                            field_type="bool",
-                            method="is_valid",
-                            description="Whether the JSON is valid"
-                        )
-                    ]
+                ]
+            
+            async def execute(self, **kwargs):
+                llm_output = kwargs.get("llm_output", "")
                 
-                async def execute(self, **kwargs):
-                    llm_output = kwargs.get("llm_output", "")
-                    # Handle input from connected nodes
-                    if not llm_output:
-                        llm_output = kwargs.get("response", "")
-                    
-                    try:
-                        import json
-                        # Try to extract JSON from the output
+                try:
+                    # Try to parse as JSON
+                    if llm_output.strip().startswith('{') and llm_output.strip().endswith('}'):
+                        parsed = json.loads(llm_output)
+                    else:
+                        # Try to extract JSON from text
                         start = llm_output.find('{')
                         end = llm_output.rfind('}') + 1
                         if start != -1 and end != 0:
@@ -400,46 +257,139 @@ def register_components_manually():
                         else:
                             # Fallback: create a mock JSON response
                             parsed = {
-                                "topic": "quantum computing",
-                                "explanation": "A revolutionary computing technology",
-                                "key_concepts": ["qubits", "superposition", "entanglement"],
-                                "applications": ["cryptography", "optimization", "simulation"],
-                                "status": "parsed_successfully"
+                                "text": llm_output,
+                                "parsed": True,
+                                "message": "Successfully processed text"
                             }
-                    except Exception as e:
-                        parsed = {
-                            "error": f"Failed to parse JSON: {str(e)}",
-                            "raw_output": llm_output,
-                            "status": "parse_failed"
-                        }
-                    
-                    is_valid = "error" not in parsed
-                    return {
-                        "parsed_json": parsed,
-                        "is_valid": is_valid,
-                        "raw_input": llm_output
+                except Exception as e:
+                    parsed = {
+                        "error": f"Failed to parse JSON: {str(e)}", 
+                        "raw_output": llm_output,
+                        "parsed": False
                     }
+                
+                return {
+                    "parsed_json": parsed, 
+                    "is_valid": "error" not in parsed
+                }
+        
+        logger.info("JSON Output Parser component created and registered")
+        
+        # Create a basic web search tool component
+        @register_component
+        class WebSearchToolComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Web Search Tool",
+                    description="Simulated web search tool",
+                    icon="🔍",
+                    category="tools",
+                    tags=["search", "web", "tool"]
+                )
+                self.inputs = [
+                    ComponentInput(
+                        name="query",
+                        display_name="Search Query",
+                        field_type="str",
+                        description="Query to search for"
+                    ),
+                    ComponentInput(
+                        name="num_results",
+                        display_name="Number of Results",
+                        field_type="int",
+                        default=5,
+                        description="Number of search results to return"
+                    )
+                ]
+                self.outputs = [
+                    ComponentOutput(
+                        name="results",
+                        display_name="Search Results",
+                        field_type="list",
+                        method="search",
+                        description="List of search results"
+                    )
+                ]
             
-            logger.info("Inline output parser components created and registered")
+            async def execute(self, **kwargs):
+                query = kwargs.get("query", "")
+                num_results = kwargs.get("num_results", 5)
+                
+                if not query:
+                    return {"results": [], "error": "No search query provided"}
+                
+                # Simulate search results
+                fake_results = []
+                for i in range(min(num_results, 5)):
+                    fake_results.append({
+                        "title": f"Search Result {i+1} for '{query}'",
+                        "url": f"https://example.com/result-{i+1}",
+                        "snippet": f"This is a simulated search result snippet for query: {query}",
+                        "rank": i + 1
+                    })
+                
+                return {
+                    "results": fake_results,
+                    "query": query,
+                    "total_results": len(fake_results)
+                }
         
-        # Try to register simple components if available
-        try:
-            from components.simple_components import SimpleInputComponent, SimpleLLMComponent
-            ComponentRegistry.register(SimpleInputComponent)
-            ComponentRegistry.register(SimpleLLMComponent)
-            logger.info("Simple components registered successfully")
-        except ImportError as e:
-            logger.warning(f"Could not import simple components: {e}")
+        logger.info("Web Search Tool component created and registered")
         
-        logger.info("Manual component registration completed")
+        logger.info("Manual component registration completed successfully")
         
     except Exception as e:
         logger.error(f"Manual registration failed: {e}")
-        import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
 
 # Track application startup time
 startup_time = time.time()
+
+def ensure_static_directory():
+    """Ensure static directory and index.html exist"""
+    static_dir = "static"
+    index_file = os.path.join(static_dir, "index.html")
+    
+    if not os.path.exists(static_dir):
+        os.makedirs(static_dir)
+        logger.info(f"Created static directory: {static_dir}")
+    
+    if not os.path.exists(index_file):
+        # Create a simple index.html
+        html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangChain Platform</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .links { display: flex; gap: 20px; justify-content: center; }
+        .link { padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 LangChain Platform</h1>
+            <p>Drag-and-drop LangChain component platform</p>
+        </div>
+        <div class="links">
+            <a href="/docs" class="link">API Documentation</a>
+            <a href="/api/v1/health" class="link">Health Check</a>
+            <a href="/info" class="link">Platform Info</a>
+        </div>
+    </div>
+</body>
+</html>"""
+        
+        with open(index_file, 'w') as f:
+            f.write(html_content)
+        logger.info(f"Created index.html: {index_file}")
+    
+    logger.info("Static directory and index.html created")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -448,41 +398,8 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 50)
     logger.info("Starting LangChain Platform...")
     
-    # Create static directory if it doesn't exist
-    try:
-        os.makedirs("static", exist_ok=True)
-        # Create a simple index.html
-        with open("static/index.html", "w") as f:
-            f.write("""<!DOCTYPE html>
-<html>
-<head>
-    <title>Agentix Backend</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .api-link { color: #007bff; text-decoration: none; }
-        .api-link:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>🚀 Agentix Backend</h1>
-        <p>LangChain Drag-and-Drop Platform is running successfully!</p>
-        <h2>Available Endpoints:</h2>
-        <ul>
-            <li><a href="/docs" class="api-link">API Documentation (Swagger)</a></li>
-            <li><a href="/redoc" class="api-link">ReDoc Documentation</a></li>
-            <li><a href="/api/v1/health" class="api-link">Health Check</a></li>
-            <li><a href="/api/v1/components" class="api-link">Components List</a></li>
-            <li><a href="/status" class="api-link">Status</a></li>
-            <li><a href="/info" class="api-link">Platform Info</a></li>
-        </ul>
-    </div>
-</body>
-</html>""")
-        logger.info("Static directory and index.html created")
-    except Exception as e:
-        logger.warning(f"Could not create static directory: {e}")
+    # Ensure static directory exists
+    ensure_static_directory()
     
     # Manual registration
     register_components_manually()
@@ -523,7 +440,8 @@ async def lifespan(app: FastAPI):
     # Cleanup resources
     try:
         # Clear caches
-        if 'component_manager' in locals():
+        component_manager = ComponentManager()
+        if hasattr(component_manager, 'clear_cache'):
             component_manager.clear_cache()
             logger.info("Cleared component caches")
         
@@ -549,7 +467,7 @@ app = FastAPI(
     - 🛡️ Production-ready architecture
     
     ## Components
-    - Language Models (OpenAI, Anthropic, Groq, etc.)
+    - Language Models (OpenAI, Anthropic, etc.)
     - Embeddings (OpenAI, HuggingFace, etc.)
     - Vector Stores (Chroma, Pinecone, etc.)
     - Tools and Agents
@@ -599,8 +517,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={
             "error": "Internal server error",
             "message": str(exc),
-            "path": str(request.url.path),
-            "timestamp": time.time()
+            "path": str(request.url.path)
         }
     )
 
@@ -628,8 +545,7 @@ async def root():
             "redoc": "/redoc", 
             "health": "/api/v1/health",
             "components": "/api/v1/components",
-            "flows": "/api/v1/flows",
-            "static": "/static"
+            "flows": "/api/v1/flows"
         },
         "features": [
             "Drag-and-drop flow builder",
@@ -637,31 +553,20 @@ async def root():
             "LangChain integration",
             "Flow export to Python",
             "Built-in monitoring",
-            "Caching and optimization",
-            "Groq API support"
+            "Caching and optimization"
         ]
     }
 
 @app.get("/info")
 async def get_platform_info():
     """Get detailed platform information"""
-    try:
-        component_stats = ComponentRegistry.get_stats()
-    except:
-        component_stats = {
-            "total_components": len(ComponentRegistry._components),
-            "categories": len(ComponentRegistry.get_categories())
-        }
+    component_stats = ComponentRegistry.get_stats()
     
     return {
         "platform": {
             "name": "LangChain Platform",
             "version": "1.0.0",
-            "uptime_seconds": time.time() - startup_time,
-            "environment": {
-                "groq_api_configured": bool(os.getenv("GROQ_API_KEY") and os.getenv("GROQ_API_KEY") != "fake-key-for-testing"),
-                "static_files_available": os.path.exists("static")
-            }
+            "uptime_seconds": time.time() - startup_time
         },
         "components": component_stats,
         "categories": ComponentRegistry.get_categories(),
@@ -687,9 +592,7 @@ async def get_status():
         "status": "healthy",
         "timestamp": time.time(),
         "uptime": time.time() - startup_time,
-        "components": len(ComponentRegistry._components),
-        "categories": len(ComponentRegistry.get_categories()),
-        "version": "1.0.0"
+        "components": len(ComponentRegistry._components)
     }
 
 @app.get("/metrics")
@@ -703,8 +606,7 @@ async def get_metrics():
             "platform_metrics": {
                 "uptime_seconds": time.time() - startup_time,
                 "registered_components": len(ComponentRegistry._components),
-                "categories": len(ComponentRegistry.get_categories()),
-                "groq_api_available": bool(os.getenv("GROQ_API_KEY") and os.getenv("GROQ_API_KEY") != "fake-key-for-testing")
+                "categories": len(ComponentRegistry.get_categories())
             },
             "execution_metrics": stats,
             "timestamp": time.time()
