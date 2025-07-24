@@ -4,7 +4,7 @@ Simple Components for Basic Workflows
 from typing import Dict, Any
 from ..core.base import BaseLangChainComponent, ComponentInput, ComponentOutput, ComponentMetadata
 from ..core.registry import register_component  # Fix: Import from registry, not base
-
+from ..core.registry import register_component  # Import from registry, not base
 @register_component
 class SimpleInputComponent(BaseLangChainComponent):
     """Simple Input Component for basic text input"""

@@ -3,9 +3,9 @@ LangChain Components Package
 Contains all component implementations organized by category
 """
 try:
-    from . import inputs          # ADD THIS LINE - CRITICAL
-    from . import outputs         # ADD THIS LINE - CRITICAL  
-    # from . import agents  # Temporarily disabled due to Pydantic compatibility issues
+    from . import inputs          # CRITICAL - must be imported
+    from . import outputs         # CRITICAL - must be imported  
+    from . import llms 
     from . import callbacks  
     from . import chat_models
     from . import embeddings
