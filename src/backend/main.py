@@ -1364,659 +1364,658 @@ if __name__ == "__main__":
                     documents.append({
                         "page_content": f"Content from {url}",
                         "metadata": {"source": url, "type": "web", "title": f"Page {i+1}"}
-                        })
+                    })                  
                
-               return {"documents": documents}
+                return {"documents": documents}
        
-       @register_component
-       class JSONLoaderComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="JSON Loader",
-                   description="Load and process JSON data files",
-                   icon="📋",
-                   category="document_loaders",
-                   tags=["loader", "json", "data", "structured"]
-               )
-               self.inputs = [
-                   ComponentInput(name="file_path", display_name="JSON File Path", field_type="str"),
-                   ComponentInput(name="text_content_key", display_name="Text Content Key", field_type="str", default="content")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="documents", display_name="JSON Documents", field_type="list",
-                                 method="get_documents", description="JSON data as documents")
-               ]
-           
-           async def execute(self, **kwargs):
-               file_path = kwargs.get("file_path", "sample.json")
-               text_key = kwargs.get("text_content_key", "content")
-               
-               documents = [{
-                   "page_content": f"JSON content from {file_path} using key '{text_key}'",
-                   "metadata": {"source": file_path, "type": "json", "content_key": text_key}
-               }]
-               
-               return {"documents": documents}
+            @register_component
+            class JSONLoaderComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="JSON Loader",
+                        description="Load and process JSON data files",
+                        icon="📋",
+                        category="document_loaders",
+                        tags=["loader", "json", "data", "structured"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="file_path", display_name="JSON File Path", field_type="str"),
+                        ComponentInput(name="text_content_key", display_name="Text Content Key", field_type="str", default="content")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="documents", display_name="JSON Documents", field_type="list",
+                                        method="get_documents", description="JSON data as documents")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    file_path = kwargs.get("file_path", "sample.json")
+                    text_key = kwargs.get("text_content_key", "content")
+                    
+                    documents = [{
+                        "page_content": f"JSON content from {file_path} using key '{text_key}'",
+                        "metadata": {"source": file_path, "type": "json", "content_key": text_key}
+                    }]
+                    
+                    return {"documents": documents}
 
-       # ===== 9. EMBEDDING COMPONENTS (4 components) =====
-       @register_component
-       class OpenAIEmbeddingsComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="OpenAI Embeddings",
-                   description="OpenAI text embeddings for semantic similarity",
-                   icon="🔤",
-                   category="embeddings",
-                   tags=["embeddings", "openai", "similarity", "vectors"]
-               )
-               self.inputs = [
-                   ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
-                   ComponentInput(name="model", display_name="Embedding Model", field_type="str", 
-                                default="text-embedding-ada-002"),
-                   ComponentInput(name="api_key", display_name="OpenAI API Key", field_type="str", password=True, required=False)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="embeddings", display_name="Text Embeddings", field_type="list",
-                                 method="get_embeddings", description="Vector embeddings for input texts"),
-                   ComponentOutput(name="embedding_function", display_name="Embedding Function", field_type="embedding_function",
-                                 method="get_function", description="Embedding function for vector stores")
-               ]
-           
-           async def execute(self, **kwargs):
-               texts = kwargs.get("texts", ["sample text"])
-               model = kwargs.get("model", "text-embedding-ada-002")
-               
-               # Simulate embeddings (in production, call OpenAI API)
-               embeddings = [[0.1, 0.2, 0.3] * 512 for _ in texts]  # Simulated 1536-dim embeddings
-               
-               return {
-                   "embeddings": embeddings,
-                   "embedding_function": f"openai_embeddings_{model}"
-               }
-       
-       @register_component
-       class HuggingFaceEmbeddingsComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="HuggingFace Embeddings",
-                   description="HuggingFace transformer embeddings",
-                   icon="🤗",
-                   category="embeddings",
-                   tags=["embeddings", "huggingface", "transformers", "local"]
-               )
-               self.inputs = [
-                   ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
-                   ComponentInput(name="model_name", display_name="Model Name", field_type="str", 
-                                default="sentence-transformers/all-MiniLM-L6-v2")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="embeddings", display_name="Text Embeddings", field_type="list",
-                                 method="get_embeddings", description="HuggingFace embeddings"),
-                   ComponentOutput(name="embedding_function", display_name="Embedding Function", field_type="embedding_function",
-                                 method="get_function", description="HuggingFace embedding function")
-               ]
-           
-           async def execute(self, **kwargs):
-               texts = kwargs.get("texts", ["sample text"])
-               model_name = kwargs.get("model_name", "sentence-transformers/all-MiniLM-L6-v2")
-               
-               # Simulate embeddings
-               embeddings = [[0.5, 0.3, 0.8] * 128 for _ in texts]  # Simulated 384-dim embeddings
-               
-               return {
-                   "embeddings": embeddings,
-                   "embedding_function": f"huggingface_embeddings_{model_name.split('/')[-1]}"
-               }
-       
-       @register_component
-       class SentenceTransformerEmbeddingsComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Sentence Transformer Embeddings",
-                   description="Sentence-BERT embeddings for semantic similarity",
-                   icon="📝",
-                   category="embeddings",
-                   tags=["embeddings", "sentence-transformers", "bert", "semantic"]
-               )
-               self.inputs = [
-                   ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
-                   ComponentInput(name="model_name", display_name="Model Name", field_type="str",
-                                default="all-mpnet-base-v2")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="embeddings", display_name="Sentence Embeddings", field_type="list",
-                                 method="get_embeddings", description="Sentence transformer embeddings")
-               ]
-           
-           async def execute(self, **kwargs):
-               texts = kwargs.get("texts", ["sample text"])
-               model_name = kwargs.get("model_name", "all-mpnet-base-v2")
-               
-               # Simulate sentence transformer embeddings
-               embeddings = [[0.2, 0.7, 0.1] * 256 for _ in texts]  # Simulated 768-dim embeddings
-               
-               return {
-                   "embeddings": embeddings,
-                   "model_name": model_name
-               }
-       
-       @register_component
-       class CohereEmbeddingsComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Cohere Embeddings",
-                   description="Cohere API embeddings for multilingual text",
-                   icon="🌟",
-                   category="embeddings",
-                   tags=["embeddings", "cohere", "multilingual", "api"]
-               )
-               self.inputs = [
-                   ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
-                   ComponentInput(name="model", display_name="Cohere Model", field_type="str", default="embed-english-v2.0"),
-                   ComponentInput(name="api_key", display_name="Cohere API Key", field_type="str", password=True, required=False)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="embeddings", display_name="Cohere Embeddings", field_type="list",
-                                 method="get_embeddings", description="Cohere text embeddings")
-               ]
-           
-           async def execute(self, **kwargs):
-               texts = kwargs.get("texts", ["sample text"])
-               model = kwargs.get("model", "embed-english-v2.0")
-               
-               # Simulate Cohere embeddings
-               embeddings = [[0.4, 0.6, 0.2] * 1024 for _ in texts]  # Simulated 4096-dim embeddings
-               
-               return {
-                   "embeddings": embeddings,
-                   "model": model
-               }
+            # ===== 9. EMBEDDING COMPONENTS (4 components) =====
+            @register_component
+            class OpenAIEmbeddingsComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="OpenAI Embeddings",
+                        description="OpenAI text embeddings for semantic similarity",
+                        icon="🔤",
+                        category="embeddings",
+                        tags=["embeddings", "openai", "similarity", "vectors"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
+                        ComponentInput(name="model", display_name="Embedding Model", field_type="str", 
+                                        default="text-embedding-ada-002"),
+                        ComponentInput(name="api_key", display_name="OpenAI API Key", field_type="str", password=True, required=False)
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="embeddings", display_name="Text Embeddings", field_type="list",
+                                        method="get_embeddings", description="Vector embeddings for input texts"),
+                        ComponentOutput(name="embedding_function", display_name="Embedding Function", field_type="embedding_function",
+                                        method="get_function", description="Embedding function for vector stores")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    texts = kwargs.get("texts", ["sample text"])
+                    model = kwargs.get("model", "text-embedding-ada-002")
+                    
+                    # Simulate embeddings (in production, call OpenAI API)
+                    embeddings = [[0.1, 0.2, 0.3] * 512 for _ in texts]  # Simulated 1536-dim embeddings
+                    
+                    return {
+                        "embeddings": embeddings,
+                        "embedding_function": f"openai_embeddings_{model}"
+                    }
+            
+            @register_component
+            class HuggingFaceEmbeddingsComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="HuggingFace Embeddings",
+                        description="HuggingFace transformer embeddings",
+                        icon="🤗",
+                        category="embeddings",
+                        tags=["embeddings", "huggingface", "transformers", "local"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
+                        ComponentInput(name="model_name", display_name="Model Name", field_type="str", 
+                                        default="sentence-transformers/all-MiniLM-L6-v2")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="embeddings", display_name="Text Embeddings", field_type="list",
+                                        method="get_embeddings", description="HuggingFace embeddings"),
+                        ComponentOutput(name="embedding_function", display_name="Embedding Function", field_type="embedding_function",
+                                        method="get_function", description="HuggingFace embedding function")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    texts = kwargs.get("texts", ["sample text"])
+                    model_name = kwargs.get("model_name", "sentence-transformers/all-MiniLM-L6-v2")
+                    
+                    # Simulate embeddings
+                    embeddings = [[0.5, 0.3, 0.8] * 128 for _ in texts]  # Simulated 384-dim embeddings
+                    
+                    return {
+                        "embeddings": embeddings,
+                        "embedding_function": f"huggingface_embeddings_{model_name.split('/')[-1]}"
+                    }
+            
+            @register_component
+            class SentenceTransformerEmbeddingsComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Sentence Transformer Embeddings",
+                        description="Sentence-BERT embeddings for semantic similarity",
+                        icon="📝",
+                        category="embeddings",
+                        tags=["embeddings", "sentence-transformers", "bert", "semantic"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
+                        ComponentInput(name="model_name", display_name="Model Name", field_type="str",
+                                        default="all-mpnet-base-v2")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="embeddings", display_name="Sentence Embeddings", field_type="list",
+                                        method="get_embeddings", description="Sentence transformer embeddings")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    texts = kwargs.get("texts", ["sample text"])
+                    model_name = kwargs.get("model_name", "all-mpnet-base-v2")
+                    
+                    # Simulate sentence transformer embeddings
+                    embeddings = [[0.2, 0.7, 0.1] * 256 for _ in texts]  # Simulated 768-dim embeddings
+                    
+                    return {
+                        "embeddings": embeddings,
+                        "model_name": model_name
+                    }
+            
+            @register_component
+            class CohereEmbeddingsComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Cohere Embeddings",
+                        description="Cohere API embeddings for multilingual text",
+                        icon="🌟",
+                        category="embeddings",
+                        tags=["embeddings", "cohere", "multilingual", "api"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="texts", display_name="Texts to Embed", field_type="list"),
+                        ComponentInput(name="model", display_name="Cohere Model", field_type="str", default="embed-english-v2.0"),
+                        ComponentInput(name="api_key", display_name="Cohere API Key", field_type="str", password=True, required=False)
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="embeddings", display_name="Cohere Embeddings", field_type="list",
+                                        method="get_embeddings", description="Cohere text embeddings")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    texts = kwargs.get("texts", ["sample text"])
+                    model = kwargs.get("model", "embed-english-v2.0")
+                    
+                    # Simulate Cohere embeddings
+                    embeddings = [[0.4, 0.6, 0.2] * 1024 for _ in texts]  # Simulated 4096-dim embeddings
+                    
+                    return {
+                        "embeddings": embeddings,
+                        "model": model
+                    }
 
-       # ===== 10. PROMPT COMPONENTS (4 components) =====
-       @register_component
-       class PromptTemplateComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Prompt Template",
-                   description="Create structured prompts with variable substitution",
-                   icon="📋",
-                   category="prompts",
-                   tags=["prompt", "template", "variables", "formatting"]
-               )
-               self.inputs = [
-                   ComponentInput(name="template", display_name="Prompt Template", field_type="str", 
-                                multiline=True, default="Tell me about {topic}"),
-                   ComponentInput(name="input_variables", display_name="Input Variables", field_type="dict", 
-                                default={"topic": "AI"})
-               ]
-               self.outputs = [
-                   ComponentOutput(name="formatted_prompt", display_name="Formatted Prompt", field_type="str",
-                                 method="get_prompt", description="Prompt with variables substituted"),
-                   ComponentOutput(name="prompt_template", display_name="Prompt Template Object", field_type="prompt_template",
-                                 method="get_template", description="Reusable prompt template")
-               ]
-           
-           async def execute(self, **kwargs):
-               template = kwargs.get("template", "Tell me about {topic}")
-               variables = kwargs.get("input_variables", {"topic": "AI"})
-               
-               # Simple variable substitution
-               formatted_prompt = template
-               for key, value in variables.items():
-                   formatted_prompt = formatted_prompt.replace("{" + key + "}", str(value))
-               
-               return {
-                   "formatted_prompt": formatted_prompt,
-                   "prompt_template": f"template_{hash(template)}"
-               }
-       
-       @register_component
-       class ChatPromptTemplateComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Chat Prompt Template",
-                   description="Create structured chat prompts with role-based messages",
-                   icon="💬",
-                   category="prompts",
-                   tags=["chat", "prompt", "conversation", "roles"]
-               )
-               self.inputs = [
-                   ComponentInput(name="system_message", display_name="System Message", field_type="str", 
-                                multiline=True, default="You are a helpful AI assistant."),
-                   ComponentInput(name="human_message_template", display_name="Human Message Template", 
-                                field_type="str", multiline=True, default="Please help me with: {query}"),
-                   ComponentInput(name="variables", display_name="Template Variables", field_type="dict", 
-                                default={"query": "learning about AI"})
-               ]
-               self.outputs = [
-                   ComponentOutput(name="chat_messages", display_name="Chat Messages", field_type="list",
-                                 method="get_messages", description="Formatted chat messages"),
-                   ComponentOutput(name="chat_prompt", display_name="Chat Prompt Template", field_type="chat_prompt",
-                                 method="get_prompt", description="Chat prompt template object")
-               ]
-           
-           async def execute(self, **kwargs):
-               system_msg = kwargs.get("system_message", "You are a helpful AI assistant.")
-               human_template = kwargs.get("human_message_template", "Please help me with: {query}")
-               variables = kwargs.get("variables", {"query": "learning about AI"})
-               
-               # Format human message
-               human_msg = human_template
-               for key, value in variables.items():
-                   human_msg = human_msg.replace("{" + key + "}", str(value))
-               
-               messages = [
-                   {"role": "system", "content": system_msg},
-                   {"role": "user", "content": human_msg}
-               ]
-               
-               return {
-                   "chat_messages": messages,
-                   "chat_prompt": f"chat_template_{hash(system_msg + human_template)}"
-               }
-       
-       @register_component
-       class FewShotPromptTemplateComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Few-Shot Prompt Template",
-                   description="Create prompts with examples for few-shot learning",
-                   icon="🎯",
-                   category="prompts",
-                   tags=["few-shot", "examples", "learning", "prompt"]
-               )
-               self.inputs = [
-                   ComponentInput(name="examples", display_name="Examples", field_type="list",
-                                default=[{"input": "2+2", "output": "4"}]),
-                   ComponentInput(name="example_template", display_name="Example Template", field_type="str",
-                                default="Input: {input}\nOutput: {output}"),
-                   ComponentInput(name="prefix", display_name="Prefix", field_type="str", 
-                                default="Here are some examples:"),
-                   ComponentInput(name="suffix", display_name="Suffix", field_type="str",
-                                default="Now solve: {input}")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="few_shot_prompt", display_name="Few-Shot Prompt", field_type="str",
-                                 method="get_prompt", description="Prompt with examples included")
-               ]
-           
-           async def execute(self, **kwargs):
-               examples = kwargs.get("examples", [{"input": "2+2", "output": "4"}])
-               example_template = kwargs.get("example_template", "Input: {input}\nOutput: {output}")
-               prefix = kwargs.get("prefix", "Here are some examples:")
-               suffix = kwargs.get("suffix", "Now solve: {input}")
-               
-               # Build few-shot prompt
-               prompt_parts = [prefix]
-               
-               for example in examples:
-                   formatted_example = example_template
-                   for key, value in example.items():
-                       formatted_example = formatted_example.replace("{" + key + "}", str(value))
-                   prompt_parts.append(formatted_example)
-               
-               prompt_parts.append(suffix)
-               few_shot_prompt = "\n\n".join(prompt_parts)
-               
-               return {"few_shot_prompt": few_shot_prompt}
-       
-       @register_component
-       class PipelinePromptTemplateComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Pipeline Prompt Template",
-                   description="Combine multiple prompt templates in a pipeline",
-                   icon="🔗",
-                   category="prompts",
-                   tags=["pipeline", "composition", "complex", "prompts"]
-               )
-               self.inputs = [
-                   ComponentInput(name="pipeline_prompts", display_name="Pipeline Prompts", field_type="list",
-                                default=[{"name": "intro", "template": "Let's solve this step by step."}]),
-                   ComponentInput(name="final_prompt", display_name="Final Prompt Template", field_type="str",
-                                default="Based on the above, {question}")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="pipeline_prompt", display_name="Pipeline Prompt", field_type="str",
-                                 method="get_prompt", description="Combined pipeline prompt")
-               ]
-           
-           async def execute(self, **kwargs):
-               pipeline_prompts = kwargs.get("pipeline_prompts", [])
-               final_prompt = kwargs.get("final_prompt", "Based on the above, {question}")
-               
-               # Combine all prompts
-               combined_parts = []
-               for prompt_info in pipeline_prompts:
-                   if isinstance(prompt_info, dict) and "template" in prompt_info:
-                       combined_parts.append(prompt_info["template"])
-               
-               combined_parts.append(final_prompt)
-               pipeline_prompt = "\n\n".join(combined_parts)
-               
-               return {"pipeline_prompt": pipeline_prompt}
+            # ===== 10. PROMPT COMPONENTS (4 components) =====
+            @register_component
+            class PromptTemplateComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Prompt Template",
+                        description="Create structured prompts with variable substitution",
+                        icon="📋",
+                        category="prompts",
+                        tags=["prompt", "template", "variables", "formatting"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="template", display_name="Prompt Template", field_type="str", 
+                                        multiline=True, default="Tell me about {topic}"),
+                        ComponentInput(name="input_variables", display_name="Input Variables", field_type="dict", 
+                                        default={"topic": "AI"})
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="formatted_prompt", display_name="Formatted Prompt", field_type="str",
+                                        method="get_prompt", description="Prompt with variables substituted"),
+                        ComponentOutput(name="prompt_template", display_name="Prompt Template Object", field_type="prompt_template",
+                                        method="get_template", description="Reusable prompt template")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    template = kwargs.get("template", "Tell me about {topic}")
+                    variables = kwargs.get("input_variables", {"topic": "AI"})
+                    
+                    # Simple variable substitution
+                    formatted_prompt = template
+                    for key, value in variables.items():
+                        formatted_prompt = formatted_prompt.replace("{" + key + "}", str(value))
+                    
+                    return {
+                        "formatted_prompt": formatted_prompt,
+                        "prompt_template": f"template_{hash(template)}"
+                    }
+            
+            @register_component
+            class ChatPromptTemplateComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Chat Prompt Template",
+                        description="Create structured chat prompts with role-based messages",
+                        icon="💬",
+                        category="prompts",
+                        tags=["chat", "prompt", "conversation", "roles"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="system_message", display_name="System Message", field_type="str", 
+                                        multiline=True, default="You are a helpful AI assistant."),
+                        ComponentInput(name="human_message_template", display_name="Human Message Template", 
+                                        field_type="str", multiline=True, default="Please help me with: {query}"),
+                        ComponentInput(name="variables", display_name="Template Variables", field_type="dict", 
+                                        default={"query": "learning about AI"})
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="chat_messages", display_name="Chat Messages", field_type="list",
+                                        method="get_messages", description="Formatted chat messages"),
+                        ComponentOutput(name="chat_prompt", display_name="Chat Prompt Template", field_type="chat_prompt",
+                                        method="get_prompt", description="Chat prompt template object")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    system_msg = kwargs.get("system_message", "You are a helpful AI assistant.")
+                    human_template = kwargs.get("human_message_template", "Please help me with: {query}")
+                    variables = kwargs.get("variables", {"query": "learning about AI"})
+                    
+                    # Format human message
+                    human_msg = human_template
+                    for key, value in variables.items():
+                        human_msg = human_msg.replace("{" + key + "}", str(value))
+                    
+                    messages = [
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": human_msg}
+                    ]
+                    
+                    return {
+                        "chat_messages": messages,
+                        "chat_prompt": f"chat_template_{hash(system_msg + human_template)}"
+                    }
+            
+            @register_component
+            class FewShotPromptTemplateComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Few-Shot Prompt Template",
+                        description="Create prompts with examples for few-shot learning",
+                        icon="🎯",
+                        category="prompts",
+                        tags=["few-shot", "examples", "learning", "prompt"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="examples", display_name="Examples", field_type="list",
+                                        default=[{"input": "2+2", "output": "4"}]),
+                        ComponentInput(name="example_template", display_name="Example Template", field_type="str",
+                                        default="Input: {input}\nOutput: {output}"),
+                        ComponentInput(name="prefix", display_name="Prefix", field_type="str", 
+                                        default="Here are some examples:"),
+                        ComponentInput(name="suffix", display_name="Suffix", field_type="str",
+                                        default="Now solve: {input}")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="few_shot_prompt", display_name="Few-Shot Prompt", field_type="str",
+                                        method="get_prompt", description="Prompt with examples included")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    examples = kwargs.get("examples", [{"input": "2+2", "output": "4"}])
+                    example_template = kwargs.get("example_template", "Input: {input}\nOutput: {output}")
+                    prefix = kwargs.get("prefix", "Here are some examples:")
+                    suffix = kwargs.get("suffix", "Now solve: {input}")
+                    
+                    # Build few-shot prompt
+                    prompt_parts = [prefix]
+                    
+                    for example in examples:
+                        formatted_example = example_template
+                        for key, value in example.items():
+                            formatted_example = formatted_example.replace("{" + key + "}", str(value))
+                        prompt_parts.append(formatted_example)
+                    
+                    prompt_parts.append(suffix)
+                    few_shot_prompt = "\n\n".join(prompt_parts)
+                    
+                    return {"few_shot_prompt": few_shot_prompt}
+            
+            @register_component
+            class PipelinePromptTemplateComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Pipeline Prompt Template",
+                        description="Combine multiple prompt templates in a pipeline",
+                        icon="🔗",
+                        category="prompts",
+                        tags=["pipeline", "composition", "complex", "prompts"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="pipeline_prompts", display_name="Pipeline Prompts", field_type="list",
+                                        default=[{"name": "intro", "template": "Let's solve this step by step."}]),
+                        ComponentInput(name="final_prompt", display_name="Final Prompt Template", field_type="str",
+                                        default="Based on the above, {question}")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="pipeline_prompt", display_name="Pipeline Prompt", field_type="str",
+                                        method="get_prompt", description="Combined pipeline prompt")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    pipeline_prompts = kwargs.get("pipeline_prompts", [])
+                    final_prompt = kwargs.get("final_prompt", "Based on the above, {question}")
+                    
+                    # Combine all prompts
+                    combined_parts = []
+                    for prompt_info in pipeline_prompts:
+                        if isinstance(prompt_info, dict) and "template" in prompt_info:
+                            combined_parts.append(prompt_info["template"])
+                    
+                    combined_parts.append(final_prompt)
+                    pipeline_prompt = "\n\n".join(combined_parts)
+                    
+                    return {"pipeline_prompt": pipeline_prompt}
 
-       # ===== 11. RETRIEVER COMPONENTS (4 components) =====
-       @register_component
-       class VectorStoreRetrieverComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Vector Store Retriever",
-                   description="Retrieve documents from vector stores using similarity search",
-                   icon="🔍",
-                   category="retrievers",
-                   tags=["retriever", "vector", "similarity", "search"]
-               )
-               self.inputs = [
-                   ComponentInput(name="vector_store", display_name="Vector Store", field_type="vector_store"),
-                   ComponentInput(name="search_kwargs", display_name="Search Parameters", field_type="dict",
-                                default={"k": 4}),
-                   ComponentInput(name="search_type", display_name="Search Type", field_type="str",
-                                options=["similarity", "mmr", "similarity_score_threshold"], default="similarity")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="retriever", display_name="Vector Retriever", field_type="retriever",
-                                 method="get_retriever", description="Configured vector store retriever"),
-                   ComponentOutput(name="search_params", display_name="Search Parameters", field_type="dict",
-                                 method="get_params", description="Retriever search parameters")
-               ]
-           
-           async def execute(self, **kwargs):
-               search_kwargs = kwargs.get("search_kwargs", {"k": 4})
-               search_type = kwargs.get("search_type", "similarity")
-               
-               return {
-                   "retriever": f"vector_retriever_{search_type}",
-                   "search_params": search_kwargs
-               }
-       
-       @register_component
-       class MultiQueryRetrieverComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Multi-Query Retriever",
-                   description="Generate multiple queries for better retrieval coverage",
-                   icon="🔄",
-                   category="retrievers",
-                   tags=["retriever", "multi-query", "coverage", "llm"]
-               )
-               self.inputs = [
-                   ComponentInput(name="retriever", display_name="Base Retriever", field_type="retriever"),
-                   ComponentInput(name="llm_chain", display_name="LLM for Query Generation", field_type="llm"),
-                   ComponentInput(name="num_queries", display_name="Number of Queries", field_type="int", default=3)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="multi_retriever", display_name="Multi-Query Retriever", field_type="retriever",
-                                 method="get_retriever", description="Multi-query retriever instance")
-               ]
-           
-           async def execute(self, **kwargs):
-               num_queries = kwargs.get("num_queries", 3)
-               
-               return {"multi_retriever": f"multi_query_retriever_{num_queries}_queries"}
-       
-       @register_component
-       class ContextualCompressionRetrieverComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Contextual Compression Retriever",
-                   description="Compress retrieved documents to only relevant information",
-                   icon="🗜️",
-                   category="retrievers",
-                   tags=["retriever", "compression", "relevance", "filtering"]
-               )
-               self.inputs = [
-                   ComponentInput(name="base_retriever", display_name="Base Retriever", field_type="retriever"),
-                   ComponentInput(name="base_compressor", display_name="Document Compressor", field_type="compressor"),
-                   ComponentInput(name="compression_type", display_name="Compression Type", field_type="str",
-                                options=["llm", "embeddings"], default="llm")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="compression_retriever", display_name="Compression Retriever", field_type="retriever",
-                                 method="get_retriever", description="Contextual compression retriever")
-               ]
-           
-           async def execute(self, **kwargs):
-               compression_type = kwargs.get("compression_type", "llm")
-               
-               return {"compression_retriever": f"compression_retriever_{compression_type}"}
-       
-       @register_component
-       class SelfQueryRetrieverComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Self-Query Retriever",
-                   description="Retriever that can filter documents based on metadata",
-                   icon="🎯",
-                   category="retrievers",
-                   tags=["retriever", "self-query", "metadata", "filtering"]
-               )
-               self.inputs = [
-                   ComponentInput(name="vector_store", display_name="Vector Store", field_type="vector_store"),
-                   ComponentInput(name="llm", display_name="Language Model", field_type="llm"),
-                   ComponentInput(name="document_content_description", display_name="Content Description", 
-                                field_type="str", default="Documents about various topics"),
-                   ComponentInput(name="metadata_field_info", display_name="Metadata Field Info", field_type="list",
-                                default=[])
-               ]
-               self.outputs = [
-                   ComponentOutput(name="self_query_retriever", display_name="Self-Query Retriever", field_type="retriever",
-                                 method="get_retriever", description="Self-querying retriever with metadata filtering")
-               ]
-           
-           async def execute(self, **kwargs):
-               content_desc = kwargs.get("document_content_description", "Documents about various topics")
-               
-               return {"self_query_retriever": f"self_query_retriever_{hash(content_desc)}"}
+            # ===== 11. RETRIEVER COMPONENTS (4 components) =====
+            @register_component
+            class VectorStoreRetrieverComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Vector Store Retriever",
+                        description="Retrieve documents from vector stores using similarity search",
+                        icon="🔍",
+                        category="retrievers",
+                        tags=["retriever", "vector", "similarity", "search"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="vector_store", display_name="Vector Store", field_type="vector_store"),
+                        ComponentInput(name="search_kwargs", display_name="Search Parameters", field_type="dict",
+                                        default={"k": 4}),
+                        ComponentInput(name="search_type", display_name="Search Type", field_type="str",
+                                        options=["similarity", "mmr", "similarity_score_threshold"], default="similarity")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="retriever", display_name="Vector Retriever", field_type="retriever",
+                                        method="get_retriever", description="Configured vector store retriever"),
+                        ComponentOutput(name="search_params", display_name="Search Parameters", field_type="dict",
+                                        method="get_params", description="Retriever search parameters")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    search_kwargs = kwargs.get("search_kwargs", {"k": 4})
+                    search_type = kwargs.get("search_type", "similarity")
+                    
+                    return {
+                        "retriever": f"vector_retriever_{search_type}",
+                        "search_params": search_kwargs
+                    }
+            
+            @register_component
+            class MultiQueryRetrieverComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Multi-Query Retriever",
+                        description="Generate multiple queries for better retrieval coverage",
+                        icon="🔄",
+                        category="retrievers",
+                        tags=["retriever", "multi-query", "coverage", "llm"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="retriever", display_name="Base Retriever", field_type="retriever"),
+                        ComponentInput(name="llm_chain", display_name="LLM for Query Generation", field_type="llm"),
+                        ComponentInput(name="num_queries", display_name="Number of Queries", field_type="int", default=3)
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="multi_retriever", display_name="Multi-Query Retriever", field_type="retriever",
+                                        method="get_retriever", description="Multi-query retriever instance")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    num_queries = kwargs.get("num_queries", 3)
+                    
+                    return {"multi_retriever": f"multi_query_retriever_{num_queries}_queries"}
+            
+            @register_component
+            class ContextualCompressionRetrieverComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Contextual Compression Retriever",
+                        description="Compress retrieved documents to only relevant information",
+                        icon="🗜️",
+                        category="retrievers",
+                        tags=["retriever", "compression", "relevance", "filtering"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="base_retriever", display_name="Base Retriever", field_type="retriever"),
+                        ComponentInput(name="base_compressor", display_name="Document Compressor", field_type="compressor"),
+                        ComponentInput(name="compression_type", display_name="Compression Type", field_type="str",
+                                        options=["llm", "embeddings"], default="llm")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="compression_retriever", display_name="Compression Retriever", field_type="retriever",
+                                        method="get_retriever", description="Contextual compression retriever")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    compression_type = kwargs.get("compression_type", "llm")
+                    
+                    return {"compression_retriever": f"compression_retriever_{compression_type}"}
+            
+            @register_component
+            class SelfQueryRetrieverComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Self-Query Retriever",
+                        description="Retriever that can filter documents based on metadata",
+                        icon="🎯",
+                        category="retrievers",
+                        tags=["retriever", "self-query", "metadata", "filtering"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="vector_store", display_name="Vector Store", field_type="vector_store"),
+                        ComponentInput(name="llm", display_name="Language Model", field_type="llm"),
+                        ComponentInput(name="document_content_description", display_name="Content Description", 
+                                        field_type="str", default="Documents about various topics"),
+                        ComponentInput(name="metadata_field_info", display_name="Metadata Field Info", field_type="list",
+                                        default=[])
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="self_query_retriever", display_name="Self-Query Retriever", field_type="retriever",
+                                        method="get_retriever", description="Self-querying retriever with metadata filtering")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    content_desc = kwargs.get("document_content_description", "Documents about various topics")
+                    
+                    return {"self_query_retriever": f"self_query_retriever_{hash(content_desc)}"}
 
-       # ===== 12. INTEGRATION COMPONENTS (4 components) =====
-       @register_component
-       class DatabaseIntegrationComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Database Integration",
-                   description="Connect and query databases (SQL and NoSQL)",
-                   icon="🗄️",
-                   category="integrations",
-                   tags=["database", "sql", "integration", "data"]
-               )
-               self.inputs = [
-                   ComponentInput(name="database_type", display_name="Database Type", field_type="str",
-                                options=["postgresql", "mysql", "sqlite", "mongodb"], default="postgresql"),
-                   ComponentInput(name="connection_string", display_name="Connection String", field_type="str", password=True),
-                   ComponentInput(name="query", display_name="Query", field_type="str", multiline=True)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="results", display_name="Query Results", field_type="list",
-                                 method="get_results", description="Database query results"),
-                   ComponentOutput(name="row_count", display_name="Row Count", field_type="int",
-                                 method="get_row_count", description="Number of rows returned")
-               ]
-           
-           async def execute(self, **kwargs):
-               db_type = kwargs.get("database_type", "postgresql")
-               query = kwargs.get("query", "SELECT * FROM users LIMIT 10")
-               
-               # Simulate database results
-               results = [
-                   {"id": 1, "name": "John Doe", "email": "john@example.com"},
-                   {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
-               ]
-               
-               return {
-                   "results": results,
-                   "row_count": len(results)
-               }
-       
-       @register_component
-       class SlackIntegrationComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Slack Integration",
-                   description="Send messages and interact with Slack workspaces",
-                   icon="💬",
-                   category="integrations",
-                   tags=["slack", "messaging", "communication", "webhook"]
-               )
-               self.inputs = [
-                   ComponentInput(name="webhook_url", display_name="Slack Webhook URL", field_type="str", password=True),
-                   ComponentInput(name="channel", display_name="Channel", field_type="str", default="#general"),
-                   ComponentInput(name="message", display_name="Message", field_type="str", multiline=True),
-                   ComponentInput(name="username", display_name="Bot Username", field_type="str", default="AgentixBot")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="sent", display_name="Message Sent", field_type="bool",
-                                 method="get_sent", description="Whether message was sent successfully"),
-                   ComponentOutput(name="response", display_name="Slack Response", field_type="dict",
-                                 method="get_response", description="Response from Slack API")
-               ]
-           
-           async def execute(self, **kwargs):
-               channel = kwargs.get("channel", "#general")
-               message = kwargs.get("message", "Hello from Agentix!")
-               
-               return {
-                   "sent": True,
-                   "response": {"ok": True, "channel": channel, "ts": str(time.time())}
-               }
-       
-       @register_component
-       class WebhookIntegrationComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Webhook Integration",
-                   description="Send and receive webhook notifications",
-                   icon="🔗",
-                   category="integrations",
-                   tags=["webhook", "http", "notification", "integration"]
-               )
-               self.inputs = [
-                   ComponentInput(name="webhook_url", display_name="Webhook URL", field_type="str"),
-                   ComponentInput(name="payload", display_name="Payload", field_type="dict"),
-                   ComponentInput(name="headers", display_name="Headers", field_type="dict", required=False),
-                   ComponentInput(name="method", display_name="HTTP Method", field_type="str",
-                                options=["POST", "PUT", "PATCH"], default="POST")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="success", display_name="Success", field_type="bool",
-                                 method="get_success", description="Whether webhook was sent successfully"),
-                   ComponentOutput(name="status_code", display_name="Status Code", field_type="int",
-                                 method="get_status", description="HTTP response status code"),
-                   ComponentOutput(name="response_body", display_name="Response Body", field_type="dict",
-                                 method="get_response", description="Webhook response body")
-               ]
-           
-           async def execute(self, **kwargs):
-               webhook_url = kwargs.get("webhook_url", "https://api.example.com/webhook")
-               method = kwargs.get("method", "POST")
-               
-               return {
-                   "success": True,
-                   "status_code": 200,
-                   "response_body": {"message": f"Webhook {method} sent to {webhook_url}", "received": True}
-               }
-       
-       @register_component
-       class GoogleSheetsIntegrationComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Google Sheets Integration",
-                   description="Read from and write to Google Sheets",
-                   icon="📊",
-                   category="integrations",
-                   tags=["google", "sheets", "spreadsheet", "data"]
-               )
-               self.inputs = [
-                   ComponentInput(name="spreadsheet_id", display_name="Spreadsheet ID", field_type="str"),
-                   ComponentInput(name="range", display_name="Range", field_type="str", default="A1:Z100"),
-                   ComponentInput(name="operation", display_name="Operation", field_type="str",
-                                options=["read", "write", "append"], default="read"),
-                   ComponentInput(name="data", display_name="Data to Write", field_type="list", required=False)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="data", display_name="Sheet Data", field_type="list",
-                                 method="get_data", description="Data from Google Sheets"),
-                   ComponentOutput(name="success", display_name="Operation Success", field_type="bool",
-                                 method="get_success", description="Whether operation was successful")
-               ]
-           
-           async def execute(self, **kwargs):
-               operation = kwargs.get("operation", "read")
-               range_val = kwargs.get("range", "A1:Z100")
-               
-               if operation == "read":
-                   data = [
-                       ["Name", "Email", "Score"],
-                       ["John Doe", "john@example.com", "85"],
-                       ["Jane Smith", "jane@example.com", "92"]
-                   ]
-               else:
-                   data = kwargs.get("data", [])
-               
-               return {
-                   "data": data,
-                   "success": True
-               }
+            # ===== 12. INTEGRATION COMPONENTS (4 components) =====
+            @register_component
+            class DatabaseIntegrationComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Database Integration",
+                        description="Connect and query databases (SQL and NoSQL)",
+                        icon="🗄️",
+                        category="integrations",
+                        tags=["database", "sql", "integration", "data"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="database_type", display_name="Database Type", field_type="str",
+                                        options=["postgresql", "mysql", "sqlite", "mongodb"], default="postgresql"),
+                        ComponentInput(name="connection_string", display_name="Connection String", field_type="str", password=True),
+                        ComponentInput(name="query", display_name="Query", field_type="str", multiline=True)
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="results", display_name="Query Results", field_type="list",
+                                        method="get_results", description="Database query results"),
+                        ComponentOutput(name="row_count", display_name="Row Count", field_type="int",
+                                        method="get_row_count", description="Number of rows returned")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    db_type = kwargs.get("database_type", "postgresql")
+                    query = kwargs.get("query", "SELECT * FROM users LIMIT 10")
+                    
+                    # Simulate database results
+                    results = [
+                        {"id": 1, "name": "John Doe", "email": "john@example.com"},
+                        {"id": 2, "name": "Jane Smith", "email": "jane@example.com"}
+                    ]
+                    
+                    return {
+                        "results": results,
+                        "row_count": len(results)
+                    }
+            
+            @register_component
+            class SlackIntegrationComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Slack Integration",
+                        description="Send messages and interact with Slack workspaces",
+                        icon="💬",
+                        category="integrations",
+                        tags=["slack", "messaging", "communication", "webhook"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="webhook_url", display_name="Slack Webhook URL", field_type="str", password=True),
+                        ComponentInput(name="channel", display_name="Channel", field_type="str", default="#general"),
+                        ComponentInput(name="message", display_name="Message", field_type="str", multiline=True),
+                        ComponentInput(name="username", display_name="Bot Username", field_type="str", default="AgentixBot")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="sent", display_name="Message Sent", field_type="bool",
+                                        method="get_sent", description="Whether message was sent successfully"),
+                        ComponentOutput(name="response", display_name="Slack Response", field_type="dict",
+                                        method="get_response", description="Response from Slack API")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    channel = kwargs.get("channel", "#general")
+                    message = kwargs.get("message", "Hello from Agentix!")
+                    
+                    return {
+                        "sent": True,
+                        "response": {"ok": True, "channel": channel, "ts": str(time.time())}
+                    }
+            
+            @register_component
+            class WebhookIntegrationComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Webhook Integration",
+                        description="Send and receive webhook notifications",
+                        icon="🔗",
+                        category="integrations",
+                        tags=["webhook", "http", "notification", "integration"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="webhook_url", display_name="Webhook URL", field_type="str"),
+                        ComponentInput(name="payload", display_name="Payload", field_type="dict"),
+                        ComponentInput(name="headers", display_name="Headers", field_type="dict", required=False),
+                        ComponentInput(name="method", display_name="HTTP Method", field_type="str",
+                                        options=["POST", "PUT", "PATCH"], default="POST")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="success", display_name="Success", field_type="bool",
+                                        method="get_success", description="Whether webhook was sent successfully"),
+                        ComponentOutput(name="status_code", display_name="Status Code", field_type="int",
+                                        method="get_status", description="HTTP response status code"),
+                        ComponentOutput(name="response_body", display_name="Response Body", field_type="dict",
+                                        method="get_response", description="Webhook response body")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    webhook_url = kwargs.get("webhook_url", "https://api.example.com/webhook")
+                    method = kwargs.get("method", "POST")
+                    
+                    return {
+                        "success": True,
+                        "status_code": 200,
+                        "response_body": {"message": f"Webhook {method} sent to {webhook_url}", "received": True}
+                    }
+            
+            @register_component
+            class GoogleSheetsIntegrationComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Google Sheets Integration",
+                        description="Read from and write to Google Sheets",
+                        icon="📊",
+                        category="integrations",
+                        tags=["google", "sheets", "spreadsheet", "data"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="spreadsheet_id", display_name="Spreadsheet ID", field_type="str"),
+                        ComponentInput(name="range", display_name="Range", field_type="str", default="A1:Z100"),
+                        ComponentInput(name="operation", display_name="Operation", field_type="str",
+                                        options=["read", "write", "append"], default="read"),
+                        ComponentInput(name="data", display_name="Data to Write", field_type="list", required=False)
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="data", display_name="Sheet Data", field_type="list",
+                                        method="get_data", description="Data from Google Sheets"),
+                        ComponentOutput(name="success", display_name="Operation Success", field_type="bool",
+                                        method="get_success", description="Whether operation was successful")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    operation = kwargs.get("operation", "read")
+                    range_val = kwargs.get("range", "A1:Z100")
+                    
+                    if operation == "read":
+                        data = [
+                            ["Name", "Email", "Score"],
+                            ["John Doe", "john@example.com", "85"],
+                            ["Jane Smith", "jane@example.com", "92"]
+                        ]
+                    else:
+                        data = kwargs.get("data", [])
+                    
+                    return {
+                        "data": data,
+                        "success": True
+                    }
 
-       # ===== 13. LOGIC COMPONENTS (5 components) =====
-       @register_component
-       class ConditionalLogicComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Conditional Logic",
-                   description="If-then-else conditional branching for workflows",
-                   icon="🔀",
-                   category="logic",
-                   tags=["logic", "conditional", "if-then", "branching"]
-               )
-               self.inputs = [
-                   ComponentInput(name="condition", display_name="Condition", field_type="str"),
-                   ComponentInput(name="input_value", display_name="Input Value", field_type="any"),
-                   ComponentInput(name="true_output", display_name="True Output", field_type="any"),
-                   ComponentInput(name="false_output", display_name="False Output", field_type="any")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="result", display_name="Conditional Result", field_type="any",
-                                 method="get_result", description="Output based on condition"),
-                   ComponentOutput(name="condition_met", display_name="Condition Met", field_type="bool",
-                                 method="get_condition_met", description="Whether condition was true")
-               ]
-           
-           async def execute(self, **kwargs):
-               condition = kwargs.get("condition", "value > 10")
-               input_value = kwargs.get("input_value", 0)
-               true_output = kwargs.get("true_output", "Condition is true")
-               false_output = kwargs.get("false_output", "Condition is false")
-               
-               # Simple condition evaluation
-               try:
-                   if isinstance(input_value, (int, float)):
-                       if ">" in condition:
-                           threshold = float(condition.split(">")[1].strip())
-                           condition_met = input_value > threshold
-                       elif "<" in condition:
-                           threshold = float(condition.split("<")[1].strip())
-                           condition_met = input_value < threshold
-                       else:
-                           condition_met = bool(input_value)
-                   else:
-                       condition_met = bool(input_value)
-                   
-                   result = true_output if condition_met else false_output
-                   
-                   return {
-                       "result": result,
-                       "condition_met": condition_met
-                   }
-               except Exception as e:
-                   return {
-                       "result": false_output,
-                       "condition_met": False,
-                       "error": str(e)
-                   }
-       
-@register_component
-       class RouterComponent(BaseLangChainComponent):
+            # ===== 13. LOGIC COMPONENTS (5 components) =====
+            @register_component
+            class ConditionalLogicComponent(BaseLangChainComponent):
+                def _setup_component(self):
+                    self.metadata = ComponentMetadata(
+                        display_name="Conditional Logic",
+                        description="If-then-else conditional branching for workflows",
+                        icon="🔀",
+                        category="logic",
+                        tags=["logic", "conditional", "if-then", "branching"]
+                    )
+                    self.inputs = [
+                        ComponentInput(name="condition", display_name="Condition", field_type="str"),
+                        ComponentInput(name="input_value", display_name="Input Value", field_type="any"),
+                        ComponentInput(name="true_output", display_name="True Output", field_type="any"),
+                        ComponentInput(name="false_output", display_name="False Output", field_type="any")
+                    ]
+                    self.outputs = [
+                        ComponentOutput(name="result", display_name="Conditional Result", field_type="any",
+                                        method="get_result", description="Output based on condition"),
+                        ComponentOutput(name="condition_met", display_name="Condition Met", field_type="bool",
+                                        method="get_condition_met", description="Whether condition was true")
+                    ]
+                
+                async def execute(self, **kwargs):
+                    condition = kwargs.get("condition", "value > 10")
+                    input_value = kwargs.get("input_value", 0)
+                    true_output = kwargs.get("true_output", "Condition is true")
+                    false_output = kwargs.get("false_output", "Condition is false")
+                    
+                    # Simple condition evaluation
+                    try:
+                        if isinstance(input_value, (int, float)):
+                            if ">" in condition:
+                                threshold = float(condition.split(">")[1].strip())
+                                condition_met = input_value > threshold
+                            elif "<" in condition:
+                                threshold = float(condition.split("<")[1].strip())
+                                condition_met = input_value < threshold
+                            else:
+                                condition_met = bool(input_value)
+                        else:
+                            condition_met = bool(input_value)
+                        
+                        result = true_output if condition_met else false_output
+                        
+                        return {
+                            "result": result,
+                            "condition_met": condition_met
+                        }
+                    except Exception as e:
+                        return {
+                            "result": false_output,
+                            "condition_met": False,
+                            "error": str(e)
+                        }
+        @register_component
+        class RouterComponent(BaseLangChainComponent):
            def _setup_component(self):
                self.metadata = ComponentMetadata(
                    display_name="Router",
@@ -2058,8 +2057,8 @@ if __name__ == "__main__":
                    "routed_data": input_data
                }
        
-       @register_component
-       class LoopComponent(BaseLangChainComponent):
+        @register_component
+        class LoopComponent(BaseLangChainComponent):
            def _setup_component(self):
                self.metadata = ComponentMetadata(
                    display_name="Loop",
@@ -2101,421 +2100,421 @@ if __name__ == "__main__":
                    "iteration_count": len(results)
                }
        
-       @register_component
-       class MergeComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Merge",
-                   description="Combine multiple inputs into a single output",
-                   icon="🔀",
-                   category="logic",
-                   tags=["merge", "combine", "aggregation", "join"]
-               )
-               self.inputs = [
-                   ComponentInput(name="inputs", display_name="Inputs to Merge", field_type="list"),
-                   ComponentInput(name="merge_strategy", display_name="Merge Strategy", field_type="str",
-                                options=["concat", "union", "intersection", "custom"], default="concat"),
-                   ComponentInput(name="separator", display_name="Separator", field_type="str", default=" ")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="merged_output", display_name="Merged Output", field_type="any",
-                                 method="get_merged", description="Combined result of all inputs"),
-                   ComponentOutput(name="input_count", display_name="Input Count", field_type="int",
-                                 method="get_count", description="Number of inputs processed")
-               ]
-           
-           async def execute(self, **kwargs):
-               inputs = kwargs.get("inputs", [])
-               merge_strategy = kwargs.get("merge_strategy", "concat")
-               separator = kwargs.get("separator", " ")
-               
-               if merge_strategy == "concat":
-                   if all(isinstance(item, str) for item in inputs):
-                       merged_output = separator.join(inputs)
-                   elif all(isinstance(item, list) for item in inputs):
-                       merged_output = []
-                       for lst in inputs:
-                           merged_output.extend(lst)
-                   else:
-                       merged_output = inputs
-               else:
-                   merged_output = inputs
-               
-               return {
-                   "merged_output": merged_output,
-                   "input_count": len(inputs)
-               }
-       
-       @register_component
-       class SwitchComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Switch",
-                   description="Multi-way branching based on input value",
-                   icon="🎛️",
-                   category="logic",
-                   tags=["switch", "branching", "multi-way", "cases"]
-               )
-               self.inputs = [
-                   ComponentInput(name="input_value", display_name="Input Value", field_type="any"),
-                   ComponentInput(name="cases", display_name="Switch Cases", field_type="dict",
-                                default={"case1": "output1", "case2": "output2"}),
-                   ComponentInput(name="default_case", display_name="Default Case", field_type="any",
-                                default="default_output")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="selected_output", display_name="Selected Output", field_type="any",
-                                 method="get_output", description="Output from matching case"),
-                   ComponentOutput(name="matched_case", display_name="Matched Case", field_type="str",
-                                 method="get_case", description="Which case was matched")
-               ]
-           
-           async def execute(self, **kwargs):
-               input_value = kwargs.get("input_value", "")
-               cases = kwargs.get("cases", {})
-               default_case = kwargs.get("default_case", "default_output")
-               
-               input_str = str(input_value).lower()
-               matched_case = "default"
-               selected_output = default_case
-               
-               for case_key, case_output in cases.items():
-                   if str(case_key).lower() == input_str:
-                       matched_case = case_key
-                       selected_output = case_output
-                       break
-               
-               return {
-                   "selected_output": selected_output,
-                   "matched_case": matched_case
-               }
+        @register_component
+        class MergeComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Merge",
+                    description="Combine multiple inputs into a single output",
+                    icon="🔀",
+                    category="logic",
+                    tags=["merge", "combine", "aggregation", "join"]
+                )
+                self.inputs = [
+                    ComponentInput(name="inputs", display_name="Inputs to Merge", field_type="list"),
+                    ComponentInput(name="merge_strategy", display_name="Merge Strategy", field_type="str",
+                                    options=["concat", "union", "intersection", "custom"], default="concat"),
+                    ComponentInput(name="separator", display_name="Separator", field_type="str", default=" ")
+                ]
+                self.outputs = [
+                    ComponentOutput(name="merged_output", display_name="Merged Output", field_type="any",
+                                    method="get_merged", description="Combined result of all inputs"),
+                    ComponentOutput(name="input_count", display_name="Input Count", field_type="int",
+                                    method="get_count", description="Number of inputs processed")
+                ]
+            
+            async def execute(self, **kwargs):
+                inputs = kwargs.get("inputs", [])
+                merge_strategy = kwargs.get("merge_strategy", "concat")
+                separator = kwargs.get("separator", " ")
+                
+                if merge_strategy == "concat":
+                    if all(isinstance(item, str) for item in inputs):
+                        merged_output = separator.join(inputs)
+                    elif all(isinstance(item, list) for item in inputs):
+                        merged_output = []
+                        for lst in inputs:
+                            merged_output.extend(lst)
+                    else:
+                        merged_output = inputs
+                else:
+                    merged_output = inputs
+                
+                return {
+                    "merged_output": merged_output,
+                    "input_count": len(inputs)
+                }
+        
+        @register_component
+        class SwitchComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Switch",
+                    description="Multi-way branching based on input value",
+                    icon="🎛️",
+                    category="logic",
+                    tags=["switch", "branching", "multi-way", "cases"]
+                )
+                self.inputs = [
+                    ComponentInput(name="input_value", display_name="Input Value", field_type="any"),
+                    ComponentInput(name="cases", display_name="Switch Cases", field_type="dict",
+                                    default={"case1": "output1", "case2": "output2"}),
+                    ComponentInput(name="default_case", display_name="Default Case", field_type="any",
+                                    default="default_output")
+                ]
+                self.outputs = [
+                    ComponentOutput(name="selected_output", display_name="Selected Output", field_type="any",
+                                    method="get_output", description="Output from matching case"),
+                    ComponentOutput(name="matched_case", display_name="Matched Case", field_type="str",
+                                    method="get_case", description="Which case was matched")
+                ]
+            
+            async def execute(self, **kwargs):
+                input_value = kwargs.get("input_value", "")
+                cases = kwargs.get("cases", {})
+                default_case = kwargs.get("default_case", "default_output")
+                
+                input_str = str(input_value).lower()
+                matched_case = "default"
+                selected_output = default_case
+                
+                for case_key, case_output in cases.items():
+                    if str(case_key).lower() == input_str:
+                        matched_case = case_key
+                        selected_output = case_output
+                        break
+                
+                return {
+                    "selected_output": selected_output,
+                    "matched_case": matched_case
+                }
 
-       # ===== 14. OUTPUT COMPONENTS (6 components) =====
-       @register_component
-       class DisplayComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Display",
-                   description="Display content in various formats for users",
-                   icon="📺",
-                   category="output",
-                   tags=["display", "visualization", "presentation", "ui"]
-               )
-               self.inputs = [
-                   ComponentInput(name="content", display_name="Content to Display", field_type="any"),
-                   ComponentInput(name="format", display_name="Display Format", field_type="str",
-                                options=["text", "json", "html", "markdown", "table"], default="text"),
-                   ComponentInput(name="title", display_name="Display Title", field_type="str", required=False)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="formatted_output", display_name="Formatted Output", field_type="str",
-                                 method="get_formatted", description="Content formatted for display"),
-                   ComponentOutput(name="display_metadata", display_name="Display Metadata", field_type="dict",
-                                 method="get_metadata", description="Metadata about the display")
-               ]
-           
-           async def execute(self, **kwargs):
-               content = kwargs.get("content", "")
-               format_type = kwargs.get("format", "text")
-               title = kwargs.get("title", "")
-               
-               if format_type == "json":
-                   import json
-                   formatted_output = json.dumps(content, indent=2) if not isinstance(content, str) else content
-               elif format_type == "html":
-                   formatted_output = f"<div><h3>{title}</h3><p>{content}</p></div>" if title else f"<p>{content}</p>"
-               elif format_type == "markdown":
-                   formatted_output = f"# {title}\n\n{content}" if title else str(content)
-               else:
-                   formatted_output = str(content)
-               
-               display_metadata = {
-                   "format": format_type,
-                   "title": title,
-                   "content_length": len(str(content)),
-                   "timestamp": datetime.now().isoformat()
-               }
-               
-               return {
-                   "formatted_output": formatted_output,
-                   "display_metadata": display_metadata
-               }
-       
-       @register_component
-       class FileExportComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="File Export",
-                   description="Export data to various file formats",
-                   icon="💾",
-                   category="output",
-                   tags=["export", "file", "save", "download"]
-               )
-               self.inputs = [
-                   ComponentInput(name="data", display_name="Data to Export", field_type="any"),
-                   ComponentInput(name="file_path", display_name="File Path", field_type="str"),
-                   ComponentInput(name="format", display_name="Export Format", field_type="str",
-                                options=["json", "csv", "txt", "html", "pdf"], default="json"),
-                   ComponentInput(name="overwrite", display_name="Overwrite Existing", field_type="bool", default=False)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="file_path", display_name="Saved File Path", field_type="str",
-                                 method="get_file_path", description="Path where file was saved"),
-                   ComponentOutput(name="file_size", display_name="File Size", field_type="int",
-                                 method="get_file_size", description="Size of exported file in bytes"),
-                   ComponentOutput(name="export_success", display_name="Export Success", field_type="bool",
-                                 method="get_success", description="Whether export was successful")
-               ]
-           
-           async def execute(self, **kwargs):
-               data = kwargs.get("data", {})
-               file_path = kwargs.get("file_path", "./export.json")
-               format_type = kwargs.get("format", "json")
-               
-               # Simulate file export
-               file_size = len(str(data))
-               
-               return {
-                   "file_path": file_path,
-                   "file_size": file_size,
-                   "export_success": True,
-                   "format": format_type,
-                   "exported_at": datetime.utcnow().isoformat()
-               }
-       
-       @register_component
-       class ChartComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Chart",
-                   description="Create charts and visualizations from data",
-                   icon="📊",
-                   category="output",
-                   tags=["chart", "visualization", "graph", "plot"]
-               )
-               self.inputs = [
-                   ComponentInput(name="data", display_name="Chart Data", field_type="list"),
-                   ComponentInput(name="chart_type", display_name="Chart Type", field_type="str",
-                                options=["line", "bar", "pie", "scatter", "histogram"], default="bar"),
-                   ComponentInput(name="title", display_name="Chart Title", field_type="str", required=False),
-                   ComponentInput(name="x_axis", display_name="X-Axis Label", field_type="str", required=False),
-                   ComponentInput(name="y_axis", display_name="Y-Axis Label", field_type="str", required=False)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="chart_config", display_name="Chart Configuration", field_type="dict",
-                                 method="get_config", description="Chart configuration for rendering"),
-                   ComponentOutput(name="chart_data", display_name="Processed Chart Data", field_type="list",
-                                 method="get_data", description="Data formatted for charting")
-               ]
-           
-           async def execute(self, **kwargs):
-               data = kwargs.get("data", [{"x": 1, "y": 2}, {"x": 2, "y": 4}])
-               chart_type = kwargs.get("chart_type", "bar")
-               title = kwargs.get("title", "Chart")
-               
-               chart_config = {
-                   "type": chart_type,
-                   "title": title,
-                   "x_axis": kwargs.get("x_axis", "X"),
-                   "y_axis": kwargs.get("y_axis", "Y"),
-                   "data_points": len(data)
-               }
-               
-               return {
-                   "chart_config": chart_config,
-                   "chart_data": data
-               }
-       
-       @register_component
-       class NotificationComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Notification",
-                   description="Send notifications via multiple channels",
-                   icon="🔔",
-                   category="output",
-                   tags=["notification", "alert", "messaging", "communication"]
-               )
-               self.inputs = [
-                   ComponentInput(name="message", display_name="Notification Message", field_type="str"),
-                   ComponentInput(name="channel", display_name="Notification Channel", field_type="str",
-                                options=["email", "slack", "sms", "push", "webhook"], default="email"),
-                   ComponentInput(name="recipient", display_name="Recipient", field_type="str"),
-                   ComponentInput(name="priority", display_name="Priority", field_type="str",
-                                options=["low", "normal", "high", "urgent"], default="normal")
-               ]
-               self.outputs = [
-                   ComponentOutput(name="sent", display_name="Notification Sent", field_type="bool",
-                                 method="get_sent", description="Whether notification was sent successfully"),
-                   ComponentOutput(name="delivery_id", display_name="Delivery ID", field_type="str",
-                                 method="get_delivery_id", description="Unique identifier for the notification"),
-                   ComponentOutput(name="delivery_status", display_name="Delivery Status", field_type="str",
-                                 method="get_status", description="Current delivery status")
-               ]
-           
-           async def execute(self, **kwargs):
-               message = kwargs.get("message", "Notification from Agentix")
-               channel = kwargs.get("channel", "email")
-               recipient = kwargs.get("recipient", "user@example.com")
-               priority = kwargs.get("priority", "normal")
-               
-               delivery_id = f"notif_{int(time.time())}"
-               
-               return {
-                   "sent": True,
-                   "delivery_id": delivery_id,
-                   "delivery_status": f"Sent via {channel} to {recipient} with {priority} priority"
-               }
-       
-       @register_component
-       class ReportGeneratorComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Report Generator",
-                   description="Generate comprehensive reports from data and analysis",
-                   icon="📋",
-                   category="output",
-                   tags=["report", "document", "analysis", "summary"]
-               )
-               self.inputs = [
-                   ComponentInput(name="data", display_name="Report Data", field_type="any"),
-                   ComponentInput(name="template", display_name="Report Template", field_type="str",
-                                options=["executive", "technical", "summary", "detailed"], default="summary"),
-                   ComponentInput(name="title", display_name="Report Title", field_type="str"),
-                   ComponentInput(name="include_charts", display_name="Include Charts", field_type="bool", default=True)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="report", display_name="Generated Report", field_type="str",
-                                 method="get_report", description="Complete formatted report"),
-                   ComponentOutput(name="report_metadata", display_name="Report Metadata", field_type="dict",
-                                 method="get_metadata", description="Report generation details")
-               ]
-           
-           async def execute(self, **kwargs):
-               data = kwargs.get("data", {})
-               template = kwargs.get("template", "summary")
-               title = kwargs.get("title", "Analysis Report")
-               include_charts = kwargs.get("include_charts", True)
-               
-               # Generate report content based on template
-               if template == "executive":
-                   report = f"""
-# {title} - Executive Summary
+        # ===== 14. OUTPUT COMPONENTS (6 components) =====
+        @register_component
+        class DisplayComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Display",
+                    description="Display content in various formats for users",
+                    icon="📺",
+                    category="output",
+                    tags=["display", "visualization", "presentation", "ui"]
+                )
+                self.inputs = [
+                    ComponentInput(name="content", display_name="Content to Display", field_type="any"),
+                    ComponentInput(name="format", display_name="Display Format", field_type="str",
+                                    options=["text", "json", "html", "markdown", "table"], default="text"),
+                    ComponentInput(name="title", display_name="Display Title", field_type="str", required=False)
+                ]
+                self.outputs = [
+                    ComponentOutput(name="formatted_output", display_name="Formatted Output", field_type="str",
+                                    method="get_formatted", description="Content formatted for display"),
+                    ComponentOutput(name="display_metadata", display_name="Display Metadata", field_type="dict",
+                                    method="get_metadata", description="Metadata about the display")
+                ]
+            
+            async def execute(self, **kwargs):
+                content = kwargs.get("content", "")
+                format_type = kwargs.get("format", "text")
+                title = kwargs.get("title", "")
+                
+                if format_type == "json":
+                    import json
+                    formatted_output = json.dumps(content, indent=2) if not isinstance(content, str) else content
+                elif format_type == "html":
+                    formatted_output = f"<div><h3>{title}</h3><p>{content}</p></div>" if title else f"<p>{content}</p>"
+                elif format_type == "markdown":
+                    formatted_output = f"# {title}\n\n{content}" if title else str(content)
+                else:
+                    formatted_output = str(content)
+                
+                display_metadata = {
+                    "format": format_type,
+                    "title": title,
+                    "content_length": len(str(content)),
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+                return {
+                    "formatted_output": formatted_output,
+                    "display_metadata": display_metadata
+                }
+        
+        @register_component
+        class FileExportComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="File Export",
+                    description="Export data to various file formats",
+                    icon="💾",
+                    category="output",
+                    tags=["export", "file", "save", "download"]
+                )
+                self.inputs = [
+                    ComponentInput(name="data", display_name="Data to Export", field_type="any"),
+                    ComponentInput(name="file_path", display_name="File Path", field_type="str"),
+                    ComponentInput(name="format", display_name="Export Format", field_type="str",
+                                    options=["json", "csv", "txt", "html", "pdf"], default="json"),
+                    ComponentInput(name="overwrite", display_name="Overwrite Existing", field_type="bool", default=False)
+                ]
+                self.outputs = [
+                    ComponentOutput(name="file_path", display_name="Saved File Path", field_type="str",
+                                    method="get_file_path", description="Path where file was saved"),
+                    ComponentOutput(name="file_size", display_name="File Size", field_type="int",
+                                    method="get_file_size", description="Size of exported file in bytes"),
+                    ComponentOutput(name="export_success", display_name="Export Success", field_type="bool",
+                                    method="get_success", description="Whether export was successful")
+                ]
+            
+            async def execute(self, **kwargs):
+                data = kwargs.get("data", {})
+                file_path = kwargs.get("file_path", "./export.json")
+                format_type = kwargs.get("format", "json")
+                
+                # Simulate file export
+                file_size = len(str(data))
+                
+                return {
+                    "file_path": file_path,
+                    "file_size": file_size,
+                    "export_success": True,
+                    "format": format_type,
+                    "exported_at": datetime.utcnow().isoformat()
+                }
+        
+        @register_component
+        class ChartComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Chart",
+                    description="Create charts and visualizations from data",
+                    icon="📊",
+                    category="output",
+                    tags=["chart", "visualization", "graph", "plot"]
+                )
+                self.inputs = [
+                    ComponentInput(name="data", display_name="Chart Data", field_type="list"),
+                    ComponentInput(name="chart_type", display_name="Chart Type", field_type="str",
+                                    options=["line", "bar", "pie", "scatter", "histogram"], default="bar"),
+                    ComponentInput(name="title", display_name="Chart Title", field_type="str", required=False),
+                    ComponentInput(name="x_axis", display_name="X-Axis Label", field_type="str", required=False),
+                    ComponentInput(name="y_axis", display_name="Y-Axis Label", field_type="str", required=False)
+                ]
+                self.outputs = [
+                    ComponentOutput(name="chart_config", display_name="Chart Configuration", field_type="dict",
+                                    method="get_config", description="Chart configuration for rendering"),
+                    ComponentOutput(name="chart_data", display_name="Processed Chart Data", field_type="list",
+                                    method="get_data", description="Data formatted for charting")
+                ]
+            
+            async def execute(self, **kwargs):
+                data = kwargs.get("data", [{"x": 1, "y": 2}, {"x": 2, "y": 4}])
+                chart_type = kwargs.get("chart_type", "bar")
+                title = kwargs.get("title", "Chart")
+                
+                chart_config = {
+                    "type": chart_type,
+                    "title": title,
+                    "x_axis": kwargs.get("x_axis", "X"),
+                    "y_axis": kwargs.get("y_axis", "Y"),
+                    "data_points": len(data)
+                }
+                
+                return {
+                    "chart_config": chart_config,
+                    "chart_data": data
+                }
+        
+        @register_component
+        class NotificationComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Notification",
+                    description="Send notifications via multiple channels",
+                    icon="🔔",
+                    category="output",
+                    tags=["notification", "alert", "messaging", "communication"]
+                )
+                self.inputs = [
+                    ComponentInput(name="message", display_name="Notification Message", field_type="str"),
+                    ComponentInput(name="channel", display_name="Notification Channel", field_type="str",
+                                    options=["email", "slack", "sms", "push", "webhook"], default="email"),
+                    ComponentInput(name="recipient", display_name="Recipient", field_type="str"),
+                    ComponentInput(name="priority", display_name="Priority", field_type="str",
+                                    options=["low", "normal", "high", "urgent"], default="normal")
+                ]
+                self.outputs = [
+                    ComponentOutput(name="sent", display_name="Notification Sent", field_type="bool",
+                                    method="get_sent", description="Whether notification was sent successfully"),
+                    ComponentOutput(name="delivery_id", display_name="Delivery ID", field_type="str",
+                                    method="get_delivery_id", description="Unique identifier for the notification"),
+                    ComponentOutput(name="delivery_status", display_name="Delivery Status", field_type="str",
+                                    method="get_status", description="Current delivery status")
+                ]
+            
+            async def execute(self, **kwargs):
+                message = kwargs.get("message", "Notification from Agentix")
+                channel = kwargs.get("channel", "email")
+                recipient = kwargs.get("recipient", "user@example.com")
+                priority = kwargs.get("priority", "normal")
+                
+                delivery_id = f"notif_{int(time.time())}"
+                
+                return {
+                    "sent": True,
+                    "delivery_id": delivery_id,
+                    "delivery_status": f"Sent via {channel} to {recipient} with {priority} priority"
+                }
+        
+        @register_component
+        class ReportGeneratorComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Report Generator",
+                    description="Generate comprehensive reports from data and analysis",
+                    icon="📋",
+                    category="output",
+                    tags=["report", "document", "analysis", "summary"]
+                )
+                self.inputs = [
+                    ComponentInput(name="data", display_name="Report Data", field_type="any"),
+                    ComponentInput(name="template", display_name="Report Template", field_type="str",
+                                    options=["executive", "technical", "summary", "detailed"], default="summary"),
+                    ComponentInput(name="title", display_name="Report Title", field_type="str"),
+                    ComponentInput(name="include_charts", display_name="Include Charts", field_type="bool", default=True)
+                ]
+                self.outputs = [
+                    ComponentOutput(name="report", display_name="Generated Report", field_type="str",
+                                    method="get_report", description="Complete formatted report"),
+                    ComponentOutput(name="report_metadata", display_name="Report Metadata", field_type="dict",
+                                    method="get_metadata", description="Report generation details")
+                ]
+            
+            async def execute(self, **kwargs):
+                data = kwargs.get("data", {})
+                template = kwargs.get("template", "summary")
+                title = kwargs.get("title", "Analysis Report")
+                include_charts = kwargs.get("include_charts", True)
+                
+                # Generate report content based on template
+                if template == "executive":
+                    report = f"""
+    # {title} - Executive Summary
 
-## Key Findings
-- Data processed: {len(str(data))} characters
-- Template used: {template}
-- Charts included: {'Yes' if include_charts else 'No'}
+    ## Key Findings
+    - Data processed: {len(str(data))} characters
+    - Template used: {template}
+    - Charts included: {'Yes' if include_charts else 'No'}
 
-## Recommendations
-Based on the analysis, we recommend further investigation.
+    ## Recommendations
+    Based on the analysis, we recommend further investigation.
 
-## Conclusion
-This executive summary provides a high-level overview of the findings.
-"""
-               elif template == "technical":
-                   report = f"""
-# {title} - Technical Report
+    ## Conclusion
+    This executive summary provides a high-level overview of the findings.
+    """
+                elif template == "technical":
+                    report = f"""
+    # {title} - Technical Report
 
-## Data Analysis
-Technical analysis of the provided data shows:
-- Data structure: {type(data).__name__}
-- Processing timestamp: {datetime.now().isoformat()}
+    ## Data Analysis
+    Technical analysis of the provided data shows:
+    - Data structure: {type(data).__name__}
+    - Processing timestamp: {datetime.now().isoformat()}
 
-## Methodology
-Standard analysis procedures were applied to the dataset.
+    ## Methodology
+    Standard analysis procedures were applied to the dataset.
 
-## Technical Details
-[Technical details would be inserted here based on actual analysis]
-"""
-               else:  # summary
-                   report = f"""
-# {title}
+    ## Technical Details
+    [Technical details would be inserted here based on actual analysis]
+    """
+                else:  # summary
+                    report = f"""
+    # {title}
 
-## Summary
-This report summarizes the key findings from the data analysis.
+    ## Summary
+    This report summarizes the key findings from the data analysis.
 
-Data overview: {str(data)[:200]}...
+    Data overview: {str(data)[:200]}...
 
-Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Template: {template}
-"""
+    Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    Template: {template}
+    """
+                
+                report_metadata = {
+                    "template": template,
+                    "generated_at": datetime.now().isoformat(),
+                    "data_size": len(str(data)),
+                    "include_charts": include_charts,
+                    "word_count": len(report.split())
+                }
+                
+                return {
+                    "report": report,
+                    "report_metadata": report_metadata
+                }
+        
+        @register_component
+        class DashboardComponent(BaseLangChainComponent):
+            def _setup_component(self):
+                self.metadata = ComponentMetadata(
+                    display_name="Dashboard",
+                    description="Create interactive dashboards with multiple widgets",
+                    icon="📊",
+                    category="output",
+                    tags=["dashboard", "widgets", "interactive", "visualization"]
+                )
+                self.inputs = [
+                    ComponentInput(name="widgets", display_name="Dashboard Widgets", field_type="list"),
+                    ComponentInput(name="layout", display_name="Dashboard Layout", field_type="str",
+                                    options=["grid", "rows", "columns", "custom"], default="grid"),
+                    ComponentInput(name="title", display_name="Dashboard Title", field_type="str"),
+                    ComponentInput(name="refresh_interval", display_name="Refresh Interval (seconds)", 
+                                    field_type="int", default=60)
+                ]
+                self.outputs = [
+                    ComponentOutput(name="dashboard_config", display_name="Dashboard Configuration", field_type="dict",
+                                    method="get_config", description="Complete dashboard configuration"),
+                    ComponentOutput(name="widget_count", display_name="Widget Count", field_type="int",
+                                    method="get_count", description="Number of widgets in dashboard")
+                ]
+            
+            async def execute(self, **kwargs):
+                widgets = kwargs.get("widgets", [])
+                layout = kwargs.get("layout", "grid")
+                title = kwargs.get("title", "Analytics Dashboard")
+                refresh_interval = kwargs.get("refresh_interval", 60)
+                
+                dashboard_config = {
+                    "title": title,
+                    "layout": layout,
+                    "widgets": widgets,
+                    "refresh_interval": refresh_interval,
+                    "created_at": datetime.now().isoformat(),
+                    "interactive": True
+                }
                
-               report_metadata = {
-                   "template": template,
-                   "generated_at": datetime.now().isoformat(),
-                   "data_size": len(str(data)),
-                   "include_charts": include_charts,
-                   "word_count": len(report.split())
-               }
-               
-               return {
-                   "report": report,
-                   "report_metadata": report_metadata
-               }
-       
-       @register_component
-       class DashboardComponent(BaseLangChainComponent):
-           def _setup_component(self):
-               self.metadata = ComponentMetadata(
-                   display_name="Dashboard",
-                   description="Create interactive dashboards with multiple widgets",
-                   icon="📊",
-                   category="output",
-                   tags=["dashboard", "widgets", "interactive", "visualization"]
-               )
-               self.inputs = [
-                   ComponentInput(name="widgets", display_name="Dashboard Widgets", field_type="list"),
-                   ComponentInput(name="layout", display_name="Dashboard Layout", field_type="str",
-                                options=["grid", "rows", "columns", "custom"], default="grid"),
-                   ComponentInput(name="title", display_name="Dashboard Title", field_type="str"),
-                   ComponentInput(name="refresh_interval", display_name="Refresh Interval (seconds)", 
-                                field_type="int", default=60)
-               ]
-               self.outputs = [
-                   ComponentOutput(name="dashboard_config", display_name="Dashboard Configuration", field_type="dict",
-                                 method="get_config", description="Complete dashboard configuration"),
-                   ComponentOutput(name="widget_count", display_name="Widget Count", field_type="int",
-                                 method="get_count", description="Number of widgets in dashboard")
-               ]
-           
-           async def execute(self, **kwargs):
-               widgets = kwargs.get("widgets", [])
-               layout = kwargs.get("layout", "grid")
-               title = kwargs.get("title", "Analytics Dashboard")
-               refresh_interval = kwargs.get("refresh_interval", 60)
-               
-               dashboard_config = {
-                   "title": title,
-                   "layout": layout,
-                   "widgets": widgets,
-                   "refresh_interval": refresh_interval,
-                   "created_at": datetime.now().isoformat(),
-                   "interactive": True
-               }
-               
-               return {
-                   "dashboard_config": dashboard_config,
-                   "widget_count": len(widgets)
-               }
+                return {
+                    "dashboard_config": dashboard_config,
+                    "widget_count": len(widgets)
+                }
 
-       logger.info("✅ Successfully registered ALL 60+ production components!")
-       logger.info(f"📊 Total components: {len(ComponentRegistry._components)}")
-       
-       # Log component counts by category
-       categories = ComponentRegistry.get_categories()
-       for category, components in categories.items():
-           logger.info(f"  📂 {category}: {len(components)} components")
-       
-       return True
-       
-   except Exception as e:
-       logger.error(f"❌ Failed to register production components: {str(e)}")
-       logger.error(f"Traceback: {traceback.format_exc()}")
-       return False
+        logger.info("✅ Successfully registered ALL 60+ production components!")
+        logger.info(f"📊 Total components: {len(ComponentRegistry._components)}")
+        
+        # Log component counts by category
+        categories = ComponentRegistry.get_categories()
+        for category, components in categories.items():
+            logger.info(f"  📂 {category}: {len(components)} components")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to register production components: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return False
 
-# Track application startup time
-startup_time = time.time()
+    # Track application startup time
+    startup_time = time.time()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
