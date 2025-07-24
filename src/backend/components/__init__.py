@@ -2,9 +2,9 @@
 LangChain Components Package
 Contains all component implementations organized by category
 """
-
-# Import all component modules to ensure registration
 try:
+    from . import inputs          # ADD THIS LINE - CRITICAL
+    from . import outputs         # ADD THIS LINE - CRITICAL  
     # from . import agents  # Temporarily disabled due to Pydantic compatibility issues
     from . import callbacks  
     from . import chat_models
@@ -18,12 +18,13 @@ try:
     from . import tools
     from . import vectorstores
     from . import document_loaders
-    from . import simple_components  # ADD THIS LINE
+    from . import simple_components
 except ImportError as e:
     import logging
     logging.warning(f"Failed to import some component modules: {e}")
-
 __all__ = [
+    "inputs",        # ADD THIS LINE
+    "outputs",       # ADD THIS LINE
     # "agents",  # Temporarily disabled
     "callbacks", 
     "chat_models",
@@ -37,5 +38,5 @@ __all__ = [
     "tools",
     "vectorstores",
     "document_loaders",
-    "simple_components"  # ADD THIS LINE
+    "simple_components"
 ]

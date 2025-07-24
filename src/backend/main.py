@@ -126,15 +126,14 @@ def register_all_components_production():
                     tags=["input", "text", "user"],
                     version="2.0.0"
                 )
-                self.inputs = [
-                    ComponentInput(name="placeholder", display_name="Placeholder", field_type="str", default="Enter text...", description="Placeholder text"),
-                    ComponentInput(name="required", display_name="Required", field_type="bool", default=True, description="Whether input is required"),
-                    ComponentInput(name="multiline", display_name="Multiline", field_type="bool", default=False, description="Allow multiple lines"),
-                    ComponentInput(name="max_length", display_name="Max Length", field_type="int", required=False, description="Maximum character limit"),
-                    ComponentInput(name="validation_regex", display_name="Validation Pattern", field_type="str", required=False, description="Regex pattern for validation")
+                self.outputs = [
+                    ComponentOutput(name="parsed_json", display_name="Parsed JSON", field_type="dict", method="get_parsed_json"),
+                    ComponentOutput(name="is_valid", display_name="Is Valid", field_type="bool", method="get_is_valid"),
+                    ComponentOutput(name="validation_errors", display_name="Validation Errors", field_type="list", method="get_validation_errors"),
+                    ComponentOutput(name="extracted_data", display_name="Extracted Data", field_type="dict", method="get_extracted_data")
                 ]
                 self.outputs = [
-                    ComponentOutput(name="text_output", display_name="Text Output", field_type="str", description="Processed user input"),
+                    ComponentOutput(name="text_output", display_name="Text Output", field_type="str", method="get_text_output", description="Processed user input"),
                     ComponentOutput(name="character_count", display_name="Character Count", field_type="int", method="get_character_count", description="Number of characters"),
                     ComponentOutput(name="word_count", display_name="Word Count", field_type="int", method="get_word_count", description="Number of words"),
                     ComponentOutput(name="is_valid", display_name="Is Valid", field_type="bool", method="get_is_valid", description="Whether input passes validation"),
